@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DecoCRM Pro — Decorative Products</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#0a0e1a;--sur:#111827;--sur2:#1a2235;--bor:#1e2d45;
+  --acc:#f59e0b;--acc2:#d97706;--grn:#10b981;--red:#ef4444;
+  --blue:#3b82f6;--pur:#8b5cf6;--txt:#f1f5f9;--mut:#64748b;--r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Noto Sans',sans-serif;min-height:100vh}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* =========== LOGIN SCREEN =========== */
+#loginScreen{position:fixed;inset:0;background:var(--bg);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.login-bg{position:absolute;inset:0;pointer-events:none}
+.login-ring{position:absolute;border-radius:50%;border:1px solid rgba(245,158,11,.06);top:50%;left:50%;transform:translate(-50%,-50%)}
+.login-brand{position:relative;z-index:1;text-align:center;margin-bottom:32px}
+.login-brand h1{font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;background:linear-gradient(135deg,var(--acc),#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.login-brand p{font-size:13px;color:var(--mut);margin-top:4px;letter-spacing:1px}
+.login-card{background:var(--sur);border:1px solid var(--bor);border-radius:20px;padding:32px;width:380px;max-width:94vw;position:relative;z-index:1;animation:fadeUp .4s ease}
+.login-card h2{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;margin-bottom:22px;text-align:center;color:var(--acc)}
+.lf{display:flex;flex-direction:column;gap:14px}
+.lf-grp{display:flex;flex-direction:column;gap:5px}
+.lf-lbl{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.lf-inp{background:var(--sur2);border:1px solid var(--bor);color:var(--txt);border-radius:10px;padding:12px 15px;font-size:14px;font-family:'Noto Sans',sans-serif;outline:none;width:100%;transition:border-color .2s}
+.lf-inp:focus{border-color:var(--acc)}
+.login-btn{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#000;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;font-family:'Rajdhani',sans-serif;cursor:pointer;width:100%;transition:all .2s;letter-spacing:.5px}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,158,11,.3)}
+.login-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;display:none;text-align:center}
+.login-hint{font-size:11px;color:var(--mut);text-align:center;margin-top:4px}
+
+/* =========== APP LAYOUT =========== */
+#app{display:none}
+#app.show{display:flex;min-height:100vh}
+.sb{width:230px;background:var(--sur);border-right:1px solid var(--bor);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s}
+.sb-logo{padding:16px 18px;border-bottom:1px solid var(--bor)}
+.sb-logo h1{font-family:'Rajdhani',sans-serif;font-size:18px;color:var(--acc);font-weight:700}
+.sb-logo p{font-size:11px;color:var(--mut);margin-top:2px}
+.sb-user{padding:12px 18px;border-bottom:1px solid var(--bor);display:flex;align-items:center;gap:10px}
+.sb-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#000;flex-shrink:0}
+.sb-role{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+.sb-role.admin{background:rgba(245,158,11,.2);color:var(--acc)}
+.sb-role.sales{background:rgba(59,130,246,.2);color:var(--blue)}
+.nav{flex:1;padding:8px 0;overflow-y:auto}
+.ni{display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;color:var(--mut);font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .18s;user-select:none}
+.ni:hover{color:var(--txt);background:var(--sur2)}
+.ni.act{color:var(--acc);background:rgba(245,158,11,.07);border-left-color:var(--acc)}
+.ni-b{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:auto}
+.sb-foot{padding:12px 18px;border-top:1px solid var(--bor)}
+.logout-btn{width:100%;background:transparent;border:1px solid var(--bor);color:var(--mut);border-radius:8px;padding:8px;font-size:13px;font-family:'Noto Sans',sans-serif;cursor:pointer;transition:all .2s}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+.main-wrap{margin-left:230px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--sur);border-bottom:1px solid var(--bor);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:50}
+.topbar h2{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700}
+.con{padding:20px;flex:1}
+.pg{display:none}.pg.act{display:block;animation:fadeUp .25s ease}
+
+/* PUNCHBAR */
+#punchbar{display:none;background:linear-gradient(90deg,rgba(16,185,129,.07),rgba(59,130,246,.07));border-bottom:1px solid rgba(16,185,129,.2);padding:8px 22px;align-items:center;justify-content:space-between}
+#punchbar.show{display:flex}
+.pb-dot{width:8px;height:8px;border-radius:50%;background:var(--grn);animation:blink 1.5s infinite}
+
+/* BUTTONS */
+.btn{padding:7px 15px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'Noto Sans',sans-serif;transition:all .18s}
+.btn-gold{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#000}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(245,158,11,.3)}
+.btn-grn{background:var(--grn);color:#000}
+.btn-red{background:var(--red);color:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-out{background:transparent;border:1px solid var(--bor);color:var(--txt)}
+.btn-out:hover{border-color:var(--acc);color:var(--acc)}
+.btn-pur{background:var(--pur);color:#fff}
+
+/* CARDS */
+.card{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:16px}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.card-t{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+
+/* STAT CARDS */
+.sc{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc.gold::before{background:var(--acc)}.sc.grn::before{background:var(--grn)}.sc.red::before{background:var(--red)}.sc.blue::before{background:var(--blue)}.sc.pur::before{background:var(--pur)}
+.sc-l{font-size:10px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.sc-v{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700}
+.sc-s{font-size:11px;color:var(--mut);margin-top:2px}
+
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--sur2)}
+th{padding:9px 12px;text-align:left;color:var(--mut);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--bor);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-grn{background:rgba(16,185,129,.12);color:var(--grn)}
+.b-red{background:rgba(239,68,68,.12);color:var(--red)}
+.b-gold{background:rgba(245,158,11,.12);color:var(--acc)}
+.b-blue{background:rgba(59,130,246,.12);color:var(--blue)}
+.b-pur{background:rgba(139,92,246,.12);color:var(--pur)}
+
+/* FORMS */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgr{display:flex;flex-direction:column;gap:4px}
+.fgr.full{grid-column:1/-1}
+.fgr.g3{grid-template-columns:1fr 1fr 1fr}
+label{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+input,select,textarea{background:var(--sur2);border:1px solid var(--bor);color:var(--txt);border-radius:8px;padding:9px 12px;font-size:13px;font-family:'Noto Sans',sans-serif;outline:none;transition:border-color .2s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+select option{background:var(--sur2)}
+.divider{height:1px;background:var(--bor);margin:14px 0}
+
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:3000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.mov.op{display:flex}
+.mo{background:var(--sur);border:1px solid var(--bor);border-radius:16px;padding:24px;width:600px;max-width:96vw;max-height:92vh;overflow-y:auto;animation:fadeUp .28s ease}
+.mo.wide{width:720px}.mo.sm{width:440px}
+.mo-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.mo-t{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700}
+.xb{background:var(--sur2);border:none;color:var(--mut);width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
+.xb:hover{color:var(--txt)}
+
+/* ORDER CARDS */
+.ocard{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:15px;margin-bottom:11px;position:relative;overflow:hidden}
+.ocard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+.ocard.pending::before{background:var(--acc)}.ocard.confirmed::before{background:var(--blue)}.ocard.dispatched::before{background:var(--grn)}.ocard.cancelled::before{background:var(--red)}
+.oitems{background:var(--sur2);border-radius:8px;padding:10px;margin-top:8px}
+.oitem{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;border-bottom:1px solid var(--bor)}
+.oitem:last-child{border-bottom:none}
+
+/* ORDER ITEM ROWS in form */
+.oir{display:grid;grid-template-columns:1fr 1.2fr 0.7fr 0.7fr 0.9fr auto;gap:7px;align-items:end;margin-bottom:8px;padding:10px;background:var(--sur2);border-radius:9px;border:1px solid var(--bor)}
+
+/* MAP */
+#dashMap,#trackMap{height:320px;width:100%;border-radius:10px;border:1px solid var(--bor)}
+.leaflet-container{background:#0a0e1a!important}
+.leaflet-tile{filter:brightness(.75) saturate(.5) hue-rotate(200deg)}
+.apills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.pill{padding:5px 12px;border-radius:20px;border:1px solid var(--bor);cursor:pointer;font-size:12px;font-weight:600;color:var(--mut);transition:all .18s}
+.pill.act{color:#000;border-color:transparent}
+.rtl{display:flex;flex-direction:column}
+.rs{display:flex;gap:10px;padding:8px 0;position:relative}
+.rs:not(:last-child)::before{content:'';position:absolute;left:13px;top:28px;bottom:-8px;width:2px;background:var(--bor)}
+.rdot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;border:2px solid var(--bor)}
+
+/* ATTENDANCE */
+.acal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.aday{background:var(--sur2);border-radius:7px;padding:6px 3px;text-align:center;border:1px solid var(--bor)}
+.aday.pr{border-color:var(--grn);background:rgba(16,185,129,.09)}
+.aday.ab{border-color:var(--red);background:rgba(239,68,68,.07)}
+.aday.td{border-color:var(--acc);background:rgba(245,158,11,.06)}
+.adn{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700}
+
+/* TROW */
+.trow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bor)}
+.trow:last-child{border-bottom:none}
+.tdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* NOTIF BELL */
+.nbell{position:relative;cursor:pointer;padding:6px 8px;border-radius:8px;font-size:18px}
+.nbell:hover{background:var(--sur2)}
+.nbadge{position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.ndrop{position:absolute;top:44px;right:22px;width:330px;background:var(--sur);border:1px solid var(--bor);border-radius:12px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;animation:fadeUp .2s ease}
+.ndrop.open{display:block}
+.nitem{padding:12px 15px;border-bottom:1px solid var(--bor);cursor:pointer}
+.nitem:hover{background:var(--sur2)}
+.nitem:last-child{border-bottom:none}
+.nitem.unread{background:rgba(245,158,11,.04)}
+
+/* WA PREVIEW */
+.wa{background:#075e54;border-radius:12px;padding:14px}
+.wa::before{content:'WhatsApp ACK Preview';display:block;font-size:10px;color:rgba(255,255,255,.5);margin-bottom:8px;font-family:'Noto Sans',sans-serif}
+.wamsg{background:#128c7e;padding:12px;border-radius:8px;white-space:pre-wrap;font-family:monospace;font-size:12px;color:#e2e8f0;line-height:1.6}
+
+/* STEPS */
+.steps{display:flex;align-items:flex-start;gap:0;margin:12px 0}
+.step{flex:1;text-align:center;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;top:12px;left:55%;width:90%;height:2px;background:var(--bor)}
+.step.done:not(:last-child)::after{background:var(--grn)}
+.sdot{width:24px;height:24px;border-radius:50%;border:2px solid var(--bor);display:flex;align-items:center;justify-content:center;font-size:10px;margin:0 auto 5px;background:var(--sur2)}
+.step.done .sdot{border-color:var(--grn);background:rgba(16,185,129,.15);color:var(--grn)}
+.step.active .sdot{border-color:var(--acc);background:rgba(245,158,11,.15);color:var(--acc)}
+.slbl{font-size:9px;color:var(--mut);font-weight:600}
+.step.done .slbl{color:var(--grn)}.step.active .slbl{color:var(--acc)}
+
+/* CUSTOMERS */
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px}
+.cc{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:14px;display:flex;gap:10px;transition:border-color .18s}
+.cc:hover{border-color:var(--acc)}
+.cav{width:36px;height:36px;border-radius:9px;background:var(--sur2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--acc);border:1px solid var(--bor);flex-shrink:0}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--sur2);border:1px solid var(--grn);color:var(--grn);padding:11px 18px;border-radius:9px;font-size:13px;font-weight:600;z-index:9999;transform:translateY(70px);opacity:0;transition:all .28s;pointer-events:none;max-width:340px}
+.toast.sh{transform:translateY(0);opacity:1}
+
+.si{background:var(--sur2);border:1px solid var(--bor);color:var(--txt);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'Noto Sans',sans-serif;outline:none;width:180px}
+.si:focus{border-color:var(--acc)}
+.es{text-align:center;padding:28px;color:var(--mut)}
+.ei{font-size:30px;margin-bottom:8px}
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-t{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="loginScreen">
+  <div class="login-bg">
+    <div class="login-ring" style="width:400px;height:400px"></div>
+    <div class="login-ring" style="width:650px;height:650px"></div>
+    <div class="login-ring" style="width:900px;height:900px"></div>
+  </div>
+  <div class="login-brand">
+    <div style="font-size:48px;margin-bottom:8px">🏺</div>
+    <h1>DecoCRM Pro</h1>
+    <p>DECORATIVE PRODUCTS SALES MANAGEMENT</p>
+  </div>
+  <div class="login-card">
+    <h2>🔐 Login Karein</h2>
+    <div class="lf">
+      <div class="lf-grp">
+        <div class="lf-lbl">User ID</div>
+        <input class="lf-inp" type="text" id="loginId" placeholder="apna user ID dalein" autocomplete="off">
+      </div>
+      <div class="lf-grp">
+        <div class="lf-lbl">Password</div>
+        <input class="lf-inp" type="password" id="loginPass" placeholder="password dalein" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-err" id="loginErr">❌ ID ya Password galat hai!</div>
+      <button class="login-btn" onclick="doLogin()">🚀 Login Karein</button>
+      <div class="login-hint">Admin ID: <b>admin</b> | Pass: <b>admin123</b></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PUNCH IN SCREEN ========== -->
+<div id="punchScreen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:8000;flex-direction:column;align-items:center;justify-content:center">
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+    <div class="login-ring" style="width:400px;height:400px;border-color:rgba(245,158,11,.06)"></div>
+    <div class="login-ring" style="width:650px;height:650px;border-color:rgba(245,158,11,.04)"></div>
+  </div>
+  <div style="font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--mut);letter-spacing:3px;margin-bottom:20px;position:relative;z-index:1">🏺 DecoCRM Pro</div>
+  <div style="font-family:'Rajdhani',sans-serif;font-size:50px;font-weight:700;color:var(--acc);letter-spacing:3px;position:relative;z-index:1" id="psClock">00:00:00</div>
+  <div style="font-size:13px;color:var(--mut);margin-top:4px;margin-bottom:28px;position:relative;z-index:1" id="psDate">—</div>
+  <div style="background:var(--sur);border:1px solid var(--bor);border-radius:20px;padding:28px;width:380px;max-width:94vw;display:flex;flex-direction:column;gap:16px;position:relative;z-index:1">
+    <div style="text-align:center">
+      <div id="psUserName" style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--txt)">—</div>
+      <div id="psUserRole" style="font-size:12px;color:var(--mut);margin-top:3px">—</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--mut)">
+      <div class="tdot" id="locDot" style="background:var(--mut)"></div>
+      <span id="locTxt">Location detect ho rahi hai...</span>
+    </div>
+    <button class="btn btn-gold" style="padding:14px;font-size:16px;font-family:'Rajdhani',sans-serif;letter-spacing:.5px;border-radius:12px" onclick="doPunchIn()">👆 PUNCH IN — Kaam Shuru Karein</button>
+    <div style="text-align:center;font-size:11px;color:var(--mut)">Punch In ke baad hi app open hoga</div>
+  </div>
+</div>
+
+<!-- ========== PUNCH OUT BAR ========== -->
+<div id="punchbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="pb-dot"></div>
+    <div>
+      <div style="font-weight:700;font-size:13px" id="pbName">—</div>
+      <div style="font-size:11px;color:var(--mut)" id="pbSub">—</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px">
+    <div style="text-align:right">
+      <div style="font-size:10px;color:var(--mut)">Kaam ka Samay</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--grn)" id="wTimer">00:00:00</div>
+    </div>
+    <button class="btn btn-red" onclick="doPunchOut()" style="font-size:12px">⛔ Punch Out</button>
+  </div>
+</div>
+
+<!-- ========== MAIN APP ========== -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <nav class="sb">
+    <div class="sb-logo">
+      <h1>🏺 DecoCRM Pro</h1>
+      <p>Decorative Products</p>
+    </div>
+    <div class="sb-user">
+      <div class="sb-av" id="sbAv" style="background:var(--acc)">A</div>
+      <div>
+        <div style="font-size:13px;font-weight:600" id="sbName">—</div>
+        <div class="sb-role" id="sbRole">—</div>
+      </div>
+    </div>
+    <div class="nav" id="navMenu"></div>
+    <div class="sb-foot">
+      <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-wrap">
+    <div class="topbar">
+      <h2 id="ptitle">Dashboard</h2>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:var(--mut)" id="clk"></span>
+        <div class="nbell" onclick="toggleND()">🔔<div class="nbadge" id="bellCnt" style="display:none">0</div></div>
+        <div id="topActions"></div>
+      </div>
+    </div>
+
+    <!-- NOTIF DROPDOWN -->
+    <div class="ndrop" id="ndrop">
+      <div style="padding:12px 15px;border-bottom:1px solid var(--bor);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;font-size:14px">🔔 Notifications</span>
+        <button class="btn btn-out" style="padding:3px 10px;font-size:11px" onclick="markAllRead()">Sab Padho</button>
+      </div>
+      <div id="ndropList" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+
+    <div class="con">
+      <!-- PAGES RENDERED BY JS -->
+      <div id="pageContent"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ========== MODALS ========== -->
+
+<!-- Add/Edit Salesperson -->
+<div class="mov" id="mSP"><div class="mo sm">
+  <div class="mo-h"><div class="mo-t" id="mSPTitle">➕ Salesperson Add Karein</div><button class="xb" onclick="closeM('mSP')">✕</button></div>
+  <div class="fg">
+    <div class="fgr full"><label>Full Name *</label><input type="text" id="sp-name" placeholder="Salesperson ka naam"></div>
+    <div class="fgr"><label>User ID *</label><input type="text" id="sp-id" placeholder="login ke liye (e.g. ravi01)" autocomplete="off"></div>
+    <div class="fgr"><label>Password *</label><input type="password" id="sp-pass" placeholder="password" autocomplete="off"></div>
+    <div class="fgr"><label>Mobile</label><input type="tel" id="sp-mob" placeholder="9876543210" maxlength="10"></div>
+    <div class="fgr"><label>Zone / Area</label><input type="text" id="sp-zone" placeholder="North Mumbai"></div>
+    <div class="fgr"><label>Status</label><select id="sp-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+  </div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px">
+    <button class="btn btn-out" onclick="closeM('mSP')">Cancel</button>
+    <button class="btn btn-gold" onclick="saveSP()">✅ Save Karein</button>
+  </div>
+</div></div>
+
+<!-- Add Customer -->
+<div class="mov" id="mCust"><div class="mo">
+  <div class="mo-h"><div class="mo-t">👥 Customer / Party Add Karein</div><button class="xb" onclick="closeM('mCust')">✕</button></div>
+  <div class="fg">
+    <div class="fgr full"><label>Party / Firm Naam *</label><input type="text" id="cu-name" placeholder="e.g. Gupta Interiors Pvt Ltd"></div>
+    <div class="fgr"><label>GST Number</label><input type="text" id="cu-gst" placeholder="27AABCU9603R1ZM" maxlength="15" style="text-transform:uppercase"></div>
+    <div class="fgr"><label>Mobile Number *</label><input type="tel" id="cu-mob" placeholder="9876543210" maxlength="10"></div>
+    <div class="fgr"><label>Contact Person</label><input type="text" id="cu-con" placeholder="Owner / Manager naam"></div>
+    <div class="fgr"><label>City</label><input type="text" id="cu-city" placeholder="Mumbai"></div>
+    <div class="fgr"><label>State</label><input type="text" id="cu-state" placeholder="Maharashtra"></div>
+    <div class="fgr full"><label>Address</label><textarea id="cu-addr" rows="2" placeholder="Full address..."></textarea></div>
+    <div class="fgr"><label>Customer Type</label>
+      <select id="cu-type"><option>Retailer</option><option>Wholesaler</option><option>Interior Designer</option><option>Architect</option><option>Contractor</option><option>Direct Customer</option></select>
+    </div>
+    <div class="fgr"><label>Assigned To</label><select id="cu-sp"></select></div>
+  </div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px">
+    <button class="btn btn-out" onclick="closeM('mCust')">Cancel</button>
+    <button class="btn btn-gold" onclick="saveCust()">✅ Save</button>
+  </div>
+</div></div>
+
+<!-- New Order -->
+<div class="mov" id="mOrder"><div class="mo wide">
+  <div class="mo-h"><div class="mo-t">🛒 New Order — Party ka Order Len</div><button class="xb" onclick="closeM('mOrder')">✕</button></div>
+  <div class="fg">
+    <div class="fgr full"><label>Party / Customer *</label><select id="o-cust"><option value="">-- Party chunein --</option></select></div>
+    <div class="fgr"><label>Order Date</label><input type="date" id="o-date"></div>
+    <div class="fgr"><label>Expected Delivery</label><input type="date" id="o-ddate"></div>
+  </div>
+  <div class="divider"></div>
+  <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">📦 Items / Products</div>
+  <div id="orderItemsBox"></div>
+  <button class="btn btn-out" onclick="addOItem()" style="width:100%;padding:8px;margin-top:6px">+ Item Add Karein</button>
+  <div class="divider"></div>
+  <div class="fg">
+    <div class="fgr"><label>Payment Terms</label>
+      <select id="o-pay"><option>Cash on Delivery</option><option>Net 30 Days</option><option>Net 15 Days</option><option>Advance Payment</option><option>Credit (30 Days)</option></select>
+    </div>
+    <div class="fgr"><label>Priority</label>
+      <select id="o-pri"><option value="normal">Normal</option><option value="urgent">🔴 Urgent</option><option value="high">🟡 High</option></select>
+    </div>
+    <div class="fgr full"><label>Special Instructions</label><textarea id="o-notes" rows="2" placeholder="Koi khaas instruction..."></textarea></div>
+  </div>
+  <div style="background:var(--sur2);border-radius:10px;padding:12px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;color:var(--mut)">Estimated Total:</span>
+    <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--acc)" id="oTotal">₹ 0</span>
+  </div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
+    <button class="btn btn-out" onclick="closeM('mOrder')">Cancel</button>
+    <button class="btn btn-gold" onclick="saveOrder()">📤 Submit — Team ko Notify Karo</button>
+  </div>
+</div></div>
+
+<!-- Dispatch Modal -->
+<div class="mov" id="mDisp"><div class="mo wide">
+  <div class="mo-h"><div class="mo-t">🚚 Order Dispatch Karein</div><button class="xb" onclick="closeM('mDisp')">✕</button></div>
+  <div id="dispOrderInfo"></div>
+  <div class="fg" style="margin-top:14px">
+    <div class="fgr"><label>Courier / Transport *</label><input type="text" id="d-cour" placeholder="DTDC, BlueDart, Apni Gaadi..." oninput="updateWA()"></div>
+    <div class="fgr"><label>Tracking / Docket No.</label><input type="text" id="d-track" placeholder="Tracking number" oninput="updateWA()"></div>
+    <div class="fgr"><label>Dispatch Date</label><input type="date" id="d-date"></div>
+    <div class="fgr"><label>Expected Delivery</label><input type="date" id="d-del" oninput="updateWA()"></div>
+    <div class="fgr full"><label>Driver / Delivery Person</label><input type="text" id="d-driver" placeholder="Naam aur mobile"></div>
+    <div class="fgr full"><label>Dispatch Notes</label><textarea id="d-notes" rows="2" placeholder="Koi aur info..."></textarea></div>
+  </div>
+  <div class="divider"></div>
+  <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">📱 Party WhatsApp Acknowledgement:</div>
+  <div class="wa"><div class="wamsg" id="waMsg">Loading...</div></div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
+    <button class="btn btn-out" onclick="closeM('mDisp')">Cancel</button>
+    <button class="btn btn-grn" onclick="doDispatch()">✅ Dispatch Confirm + Party Notify</button>
+  </div>
+</div></div>
+
+<!-- ACK Modal -->
+<div class="mov" id="mAck"><div class="mo">
+  <div class="mo-h"><div class="mo-t">📨 Dispatch Acknowledgement</div><button class="xb" onclick="closeM('mAck')">✕</button></div>
+  <div id="ackBody"></div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
+    <button class="btn btn-out" onclick="closeM('mAck')">Close</button>
+    <button class="btn btn-grn" onclick="window.print()">🖨️ Print</button>
+  </div>
+</div></div>
+
+<!-- Add Product/Item Master -->
+<div class="mov" id="mProd"><div class="mo sm">
+  <div class="mo-h"><div class="mo-t">📦 Product Add Karein</div><button class="xb" onclick="closeM('mProd')">✕</button></div>
+  <div class="fg">
+    <div class="fgr full"><label>Product Name *</label><input type="text" id="p-name" placeholder="e.g. Venetian Mosaic Tiles"></div>
+    <div class="fgr"><label>Item Code *</label><input type="text" id="p-code" placeholder="e.g. VMT-001" style="text-transform:uppercase"></div>
+    <div class="fgr"><label>Category</label>
+      <select id="p-cat">
+        <option>Wall Tiles</option><option>Floor Tiles</option><option>Mosaic</option><option>Wallpaper</option>
+        <option>Ceiling Panels</option><option>3D Panels</option><option>Decorative Moulding</option>
+        <option>PVC Panels</option><option>WPC Panels</option><option>Stone Cladding</option>
+        <option>Glass Mosaic</option><option>Laminates</option><option>Other</option>
+      </select>
+    </div>
+    <div class="fgr"><label>Default Price (₹)</label><input type="number" id="p-price" placeholder="0.00" min="0"></div>
+    <div class="fgr"><label>Unit</label>
+      <select id="p-unit"><option>Sq.Ft</option><option>Sq.Mtr</option><option>Box</option><option>Piece</option><option>Set</option><option>Roll</option><option>Sheet</option></select>
+    </div>
+    <div class="fgr"><label>HSN Code</label><input type="text" id="p-hsn" placeholder="69072100"></div>
+    <div class="fgr full"><label>Available Sizes</label><input type="text" id="p-sizes" placeholder="e.g. 12x12, 24x24, 600x600mm"></div>
+    <div class="fgr full"><label>Description</label><textarea id="p-desc" rows="2" placeholder="Product description..."></textarea></div>
+  </div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px">
+    <button class="btn btn-out" onclick="closeM('mProd')">Cancel</button>
+    <button class="btn btn-gold" onclick="saveProd()">✅ Save</button>
+  </div>
+</div></div>
+
+<script>
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+const C=['#f59e0b','#3b82f6','#10b981','#8b5cf6','#ef4444','#06b6d4','#f97316'];
+
+// DEFAULT ADMIN + SALESPERSONS
+let users = [
+  {id:'admin',name:'Admin',pass:'admin123',role:'admin',mob:'9900000000',zone:'HQ',status:'active',joinDate:'2024-01-01'}
+];
+
+// Sample salespersons (admin adds these)
+let spList = [
+  {id:'ravi01',name:'Ravi Sharma',pass:'ravi123',role:'sales',mob:'9876543210',zone:'North Mumbai',status:'active',joinDate:'2024-03-01',checkedIn:true,cin:'09:15 AM',visits:3,orders:2,km:'14.2 km',pd:20,
+   route:[{lat:19.218,lng:72.978,lbl:'Office',t:'start',tm:'09:15 AM'},{lat:19.229,lng:72.985,lbl:'Sharma Interiors',t:'visit',tm:'10:00 AM'},{lat:19.241,lng:72.973,lbl:'Patel Decor World',t:'visit',tm:'11:30 AM'},{lat:19.238,lng:72.965,lbl:'Current Location',t:'cur',tm:'Now'}]},
+  {id:'priya02',name:'Priya Patel',pass:'priya123',role:'sales',mob:'9765432109',zone:'South Mumbai',status:'active',joinDate:'2024-03-15',checkedIn:true,cin:'09:45 AM',visits:4,orders:3,km:'18.7 km',pd:22,
+   route:[{lat:18.932,lng:72.826,lbl:'Office',t:'start',tm:'09:45 AM'},{lat:18.921,lng:72.834,lbl:'Gupta Tiles House',t:'visit',tm:'10:30 AM'},{lat:18.910,lng:72.820,lbl:'Current Location',t:'cur',tm:'Now'}]},
+  {id:'amit03',name:'Amit Kumar',pass:'amit123',role:'sales',mob:'9654321098',zone:'East Mumbai',status:'active',joinDate:'2024-04-01',checkedIn:false,cin:'—',visits:1,orders:0,km:'0 km',pd:18,
+   route:[{lat:19.082,lng:72.900,lbl:'Office',t:'start',tm:'—'}]},
+];
+
+let customers = [];
+let orders = [];
+let notifs = [];
+let visits = [];
+let products = [
+  {id:'p1',name:'Venetian Mosaic Tiles',code:'VMT-001',cat:'Mosaic',price:180,unit:'Sq.Ft',sizes:'12x12, 24x24',hsn:'69072100',desc:'Premium Venetian style mosaic'},
+  {id:'p2',name:'3D Wall Panels',code:'3DP-002',cat:'3D Panels',price:220,unit:'Sq.Ft',sizes:'24x48, 48x48',hsn:'39206100',desc:'Modern 3D decorative wall panels'},
+  {id:'p3',name:'Stone Cladding Sheet',code:'SCS-003',cat:'Stone Cladding',price:350,unit:'Sq.Ft',sizes:'12x24, 24x24',hsn:'68021000',desc:'Natural stone look cladding'},
+  {id:'p4',name:'Luxury Wallpaper',code:'LWP-004',cat:'Wallpaper',price:95,unit:'Sq.Ft',sizes:'Standard Roll',hsn:'48142000',desc:'Premium designer wallpaper'},
+  {id:'p5',name:'PVC Ceiling Panels',code:'PCP-005',cat:'PVC Panels',price:65,unit:'Sq.Ft',sizes:'12 inch, 8 inch width',hsn:'39206100',desc:'Waterproof PVC ceiling panels'},
+];
+
+let iCnt=0,curDispId=null,curUser=null,pinTime=null,wInt=null;
+let myLat=null,myLng=null;
+let dMap=null,tMap=null,dL=[],tL=[],selAgt=0;
+
+// Attendance data
+const att={};
+function genAtt(id){
+  att[id]={};
+  for(let d=1;d<=31;d++){const sun=new Date(2025,2,d).getDay()===0;att[id][d]=d===16?'td':sun?'sun':d>16?'fut':Math.random()>.15?'pr':'ab';}
+}
+spList.forEach(s=>genAtt(s.id));
+genAtt('admin');
+
+// ============================================================
+// CLOCK
+// ============================================================
+function tick(){
+  const n=new Date();
+  const el=document.getElementById('psClock');if(el)el.textContent=n.toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const D=['Ravivar','Somvar','Mangalvar','Budhvar','Guruvar','Shukravar','Shanivar'];
+  const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const de=document.getElementById('psDate');if(de)de.textContent=D[n.getDay()]+', '+n.getDate()+' '+M[n.getMonth()]+' '+n.getFullYear();
+  const clk=document.getElementById('clk');if(clk)clk.textContent=n.toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(tick,1000);tick();
+
+// GPS
+navigator.geolocation.getCurrentPosition(p=>{
+  myLat=p.coords.latitude;myLng=p.coords.longitude;
+  const d=document.getElementById('locDot');if(d){d.style.background='var(--grn)';d.style.animation='blink 1.5s infinite';}
+  const t=document.getElementById('locTxt');if(t)t.textContent='Location mili: '+myLat.toFixed(4)+', '+myLng.toFixed(4);
+},()=>{myLat=19.076;myLng=72.877;
+  const d=document.getElementById('locDot');if(d){d.style.background='var(--acc)';d.style.animation='blink 1.5s infinite';}
+  const t=document.getElementById('locTxt');if(t)t.textContent='Demo: Mumbai (19.0760, 72.8777)';
+});
+
+// ============================================================
+// LOGIN / LOGOUT
+// ============================================================
+function doLogin(){
+  const id=document.getElementById('loginId').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const err=document.getElementById('loginErr');
+  
+  // Check admin
+  if(id==='admin'&&pass==='admin123'){
+    curUser={id:'admin',name:'Admin',role:'admin'};
+    err.style.display='none';
+    document.getElementById('loginScreen').style.display='none';
+    startApp();return;
+  }
+  // Check salespersons
+  const sp=spList.find(s=>s.id===id&&s.pass===pass&&s.status==='active');
+  if(sp){
+    curUser={id:sp.id,name:sp.name,role:'sales'};
+    err.style.display='none';
+    document.getElementById('loginScreen').style.display='none';
+    // Sales: show punch in screen
+    document.getElementById('punchScreen').style.display='flex';
+    document.getElementById('psUserName').textContent=sp.name;
+    document.getElementById('psUserRole').textContent='Sales Person — '+sp.zone;
+    return;
+  }
+  err.style.display='block';
+  document.getElementById('loginPass').value='';
+}
+
+function doLogout(){
+  if(!confirm('Logout karna chahte hain?'))return;
+  clearInterval(wInt);
+  curUser=null;pinTime=null;
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('punchbar').classList.remove('show');
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('loginId').value='';
+  document.getElementById('loginPass').value='';
+  if(dMap){dMap.remove();dMap=null;}if(tMap){tMap.remove();tMap=null;}
+  dL=[];tL=[];
+}
+
+// ============================================================
+// PUNCH IN / OUT (Sales only)
+// ============================================================
+function doPunchIn(){
+  pinTime=new Date();
+  document.getElementById('punchScreen').style.display='none';
+  document.getElementById('punchbar').classList.add('show');
+  document.getElementById('pbName').textContent='✅ '+curUser.name+' — Punched In';
+  document.getElementById('pbSub').textContent='📍 '+(myLat?myLat.toFixed(4)+', '+myLng.toFixed(4):'Demo Location')+' | 🕐 '+pinTime.toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'});
+  wInt=setInterval(()=>{
+    const d=Math.floor((new Date()-pinTime)/1000);
+    document.getElementById('wTimer').textContent=pad(Math.floor(d/3600))+':'+pad(Math.floor(d%3600/60))+':'+pad(d%60);
+  },1000);
+  startApp();
+  toast('✅ Punch In ho gaya! Kaam shuru karein.');
+}
+function doPunchOut(){
+  if(!confirm('Punch Out karna chahte hain?'))return;
+  clearInterval(wInt);
+  document.getElementById('punchbar').classList.remove('show');
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('punchScreen').style.display='flex';
+  pinTime=null;
+  toast('👋 Punch Out ho gaya!','var(--acc)');
+}
+function pad(n){return String(n).padStart(2,'0');}
+
+// ============================================================
+// START APP
+// ============================================================
+function startApp(){
+  document.getElementById('app').classList.add('show');
+  // Update sidebar user info
+  document.getElementById('sbAv').textContent=curUser.name.charAt(0).toUpperCase();
+  document.getElementById('sbAv').style.background=curUser.role==='admin'?'var(--acc)':'var(--blue)';
+  document.getElementById('sbName').textContent=curUser.name;
+  document.getElementById('sbRole').textContent=curUser.role==='admin'?'Admin':'Sales Person';
+  document.getElementById('sbRole').className='sb-role '+(curUser.role==='admin'?'admin':'sales');
+  buildNav();
+  // Set today date
+  const today=new Date().toISOString().split('T')[0];
+  ['o-date','d-date'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=today;});
+  setTimeout(()=>go('dash'),100);
+}
+
+// ============================================================
+// BUILD NAV based on role
+// ============================================================
+function buildNav(){
+  const nav=document.getElementById('navMenu');
+  let html='';
+  if(curUser.role==='admin'){
+    html=`
+      <div class="ni act" onclick="go('dash',this)"><span>📊</span> Dashboard</div>
+      <div class="ni" onclick="go('orders',this)"><span>🛒</span> Orders <span class="ni-b" id="pendBadge" style="display:none">0</span></div>
+      <div class="ni" onclick="go('dispatch',this)"><span>🚚</span> Dispatch <span class="ni-b" id="dispBadge" style="display:none">0</span></div>
+      <div class="ni" onclick="go('notifs',this)"><span>🔔</span> Notifications <span class="ni-b" id="notifBadge" style="display:none">0</span></div>
+      <div class="ni" onclick="go('map',this)"><span>🗺️</span> Live Map</div>
+      <div class="ni" onclick="go('customers',this)"><span>👥</span> Customers</div>
+      <div class="ni" onclick="go('products',this)"><span>📦</span> Products</div>
+      <div class="ni" onclick="go('salespersons',this)"><span>👔</span> Salespersons</div>
+      <div class="ni" onclick="go('reports',this)"><span>📈</span> Reports</div>`;
+  } else {
+    html=`
+      <div class="ni act" onclick="go('dash',this)"><span>📊</span> Dashboard</div>
+      <div class="ni" onclick="go('myorders',this)"><span>🛒</span> My Orders <span class="ni-b" id="pendBadge" style="display:none">0</span></div>
+      <div class="ni" onclick="go('customers',this)"><span>👥</span> Customers</div>
+      <div class="ni" onclick="go('attendance',this)"><span>🗓️</span> My Attendance</div>
+      <div class="ni" onclick="go('mymap',this)"><span>📍</span> Location Track</div>
+      <div class="ni" onclick="go('notifs',this)"><span>🔔</span> Notifications <span class="ni-b" id="notifBadge" style="display:none">0</span></div>`;
+  }
+  nav.innerHTML=html;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function go(name,el){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
+  if(el)el.classList.add('act');
+  else{const found=document.querySelector(`.ni[onclick*="'${name}'"]`);if(found)found.classList.add('act');}
+  const T={dash:'Dashboard',orders:'Order Management',dispatch:'Dispatch Management',notifs:'Notifications',map:'Live Agent Map',customers:'Customers',products:'Products',salespersons:'Salespersons',reports:'Reports',myorders:'My Orders',attendance:'My Attendance',mymap:'My Location'};
+  document.getElementById('ptitle').textContent=T[name]||name;
+  document.getElementById('ndrop').classList.remove('open');
+  renderPage(name);
+}
+
+function renderPage(name){
+  const pc=document.getElementById('pageContent');
+  const ta=document.getElementById('topActions');
+  ta.innerHTML='';
+  pc.innerHTML='<div style="text-align:center;padding:40px;color:var(--mut)">Loading...</div>';
+
+  switch(name){
+    case 'dash': renderDash(pc,ta); break;
+    case 'orders': renderOrdersPage(pc,ta); break;
+    case 'myorders': renderMyOrdersPage(pc,ta); break;
+    case 'dispatch': renderDispatchPage(pc,ta); break;
+    case 'notifs': renderNotifsPage(pc); break;
+    case 'map': renderMapPage(pc); break;
+    case 'mymap': renderMyMapPage(pc); break;
+    case 'customers': renderCustomersPage(pc,ta); break;
+    case 'products': renderProductsPage(pc,ta); break;
+    case 'salespersons': renderSPPage(pc,ta); break;
+    case 'attendance': renderAttPage(pc); break;
+    case 'reports': renderReportsPage(pc); break;
+    default: pc.innerHTML='<div class="es">Coming soon...</div>';
+  }
+  updS();updBadges();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDash(pc,ta){
+  if(curUser.role==='admin'){
+    ta.innerHTML='<button class="btn btn-gold" onclick="openOrderModal()">+ New Order</button>';
+    const totalOrders=orders.length;
+    const pending=orders.filter(o=>o.status==='pending').length;
+    const confirmed=orders.filter(o=>o.status==='confirmed').length;
+    const dispatched=orders.filter(o=>o.status==='dispatched').length;
+    const activeSP=spList.filter(s=>s.checkedIn).length;
+    pc.innerHTML=`
+      <div class="g5" style="margin-bottom:16px">
+        <div class="sc gold"><div class="sc-l">Total Orders</div><div class="sc-v">${totalOrders}</div><div class="sc-s">All time</div></div>
+        <div class="sc gold"><div class="sc-l">Pending</div><div class="sc-v">${pending}</div><div class="sc-s">Confirm karna hai</div></div>
+        <div class="sc blue"><div class="sc-l">Confirmed</div><div class="sc-v">${confirmed}</div><div class="sc-s">Dispatch ready</div></div>
+        <div class="sc grn"><div class="sc-l">Dispatched</div><div class="sc-v">${dispatched}</div><div class="sc-s">Party ko bheja</div></div>
+        <div class="sc pur"><div class="sc-l">Active Sales</div><div class="sc-v">${activeSP}</div><div class="sc-s">Field mein hain</div></div>
+      </div>
+      <div class="g2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-h"><span class="card-t">🛒 Recent Orders</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('orders')">Sab Dekho</button></div>
+          <div id="dOrders">${renderRecentOrders()}</div>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">🔔 Latest Notifications</span></div>
+          <div>${renderRecentNotifs()}</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h">
+          <span class="card-t">🗺️ Live Sales Team Map</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--grn);font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:var(--grn);animation:blink 1.5s infinite;display:inline-block"></span>LIVE</span>
+        </div>
+        <div id="dashMap"></div>
+      </div>`;
+    setTimeout(()=>initDashMap(),100);
+  } else {
+    // Sales Dashboard
+    ta.innerHTML='<button class="btn btn-gold" onclick="openOrderModal()">+ New Order</button>';
+    const myOrders=orders.filter(o=>o.spId===curUser.id);
+    const myPending=myOrders.filter(o=>o.status==='pending').length;
+    const myDisp=myOrders.filter(o=>o.status==='dispatched').length;
+    const myCust=customers.filter(c=>c.spId===curUser.id).length;
+    const sp=spList.find(s=>s.id===curUser.id)||{};
+    pc.innerHTML=`
+      <div class="g4" style="margin-bottom:16px">
+        <div class="sc gold"><div class="sc-l">Mere Orders</div><div class="sc-v">${myOrders.length}</div><div class="sc-s">Total orders</div></div>
+        <div class="sc gold"><div class="sc-l">Pending</div><div class="sc-v">${myPending}</div><div class="sc-s">Confirmation baki</div></div>
+        <div class="sc grn"><div class="sc-l">Dispatched</div><div class="sc-v">${myDisp}</div><div class="sc-s">Party ko bheja</div></div>
+        <div class="sc blue"><div class="sc-l">Mere Customers</div><div class="sc-v">${myCust}</div><div class="sc-s">Assigned parties</div></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-h"><span class="card-t">🛒 Mere Recent Orders</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('myorders')">Sab Dekho</button></div>
+          ${renderMyRecentOrders()}
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">📍 Aaj ka Status</span></div>
+          <div>
+            <div class="trow"><div class="tdot" style="background:var(--grn)"></div><div style="flex:1;font-size:13px">Visits Today</div><b>${sp.visits||0}</b></div>
+            <div class="trow"><div class="tdot" style="background:var(--acc)"></div><div style="flex:1;font-size:13px">Orders Today</div><b>${myOrders.filter(o=>o.date===new Date().toISOString().split('T')[0]).length}</b></div>
+            <div class="trow"><div class="tdot" style="background:var(--blue)"></div><div style="flex:1;font-size:13px">Distance</div><b>${sp.km||'0 km'}</b></div>
+            <div class="trow" style="border:none"><div class="tdot" style="background:var(--pur)"></div><div style="flex:1;font-size:13px">Zone</div><b>${sp.zone||'—'}</b></div>
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+function renderRecentOrders(){
+  if(!orders.length)return'<div class="es"><div class="ei">🛒</div>Koi order nahi</div>';
+  return orders.slice(0,5).map(o=>`<div class="trow"><div style="flex:1"><div style="font-weight:700;font-size:13px">${o.id} — ${o.custName}</div><div style="font-size:11px;color:var(--mut)">${o.spName} | ₹${o.total.toLocaleString('hi-IN')}</div></div>${sBadge(o.status)}</div>`).join('');
+}
+function renderMyRecentOrders(){
+  const my=orders.filter(o=>o.spId===curUser.id);
+  if(!my.length)return'<div class="es"><div class="ei">🛒</div>Koi order nahi</div>';
+  return my.slice(0,4).map(o=>`<div class="trow"><div style="flex:1"><div style="font-weight:700;font-size:13px">${o.id} — ${o.custName}</div><div style="font-size:11px;color:var(--mut)">₹${o.total.toLocaleString('hi-IN')} | ${o.date}</div></div>${sBadge(o.status)}</div>`).join('');
+}
+function renderRecentNotifs(){
+  if(!notifs.length)return'<div class="es"><div class="ei">🔔</div>Koi notification nahi</div>';
+  return notifs.slice(0,5).map(n=>`<div class="trow"><span style="font-size:16px">${n.type==='order'?'🛒':n.type==='dispatch'?'🚚':'✅'}</span><div style="flex:1"><div style="font-weight:700;font-size:12px">${n.title}</div><div style="font-size:11px;color:var(--mut)">${n.time}</div></div></div>`).join('');
+}
+
+// ============================================================
+// ORDERS (Admin View)
+// ============================================================
+function renderOrdersPage(pc,ta){
+  ta.innerHTML='<button class="btn btn-gold" onclick="openOrderModal()">+ New Order</button>';
+  pc.innerHTML=`
+    <div class="sec-h">
+      <span class="sec-t">🛒 Order Management</span>
+      <select id="oFilter" onchange="renderOrdersList()" style="padding:7px 12px;font-size:12px;background:var(--sur2);border:1px solid var(--bor);color:var(--txt);border-radius:8px;outline:none">
+        <option value="all">Saare Orders</option><option value="pending">Pending</option>
+        <option value="confirmed">Confirmed</option><option value="dispatched">Dispatched</option><option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div id="ordersList"></div>`;
+  renderOrdersList();
+}
+function renderOrdersList(){
+  const f=document.getElementById('oFilter')?.value||'all';
+  const el=document.getElementById('ordersList');if(!el)return;
+  const list=f==='all'?orders:orders.filter(o=>o.status===f);
+  if(!list.length){el.innerHTML='<div class="es"><div class="ei">🛒</div>Koi order nahi</div>';return;}
+  el.innerHTML=list.map(o=>orderCard(o,true)).join('');
+}
+
+// ============================================================
+// ORDERS (Sales View)
+// ============================================================
+function renderMyOrdersPage(pc,ta){
+  ta.innerHTML='<button class="btn btn-gold" onclick="openOrderModal()">+ New Order</button>';
+  pc.innerHTML=`
+    <div class="sec-h">
+      <span class="sec-t">🛒 Mere Orders</span>
+      <select id="oFilter" onchange="renderMyOrdersList()" style="padding:7px 12px;font-size:12px;background:var(--sur2);border:1px solid var(--bor);color:var(--txt);border-radius:8px;outline:none">
+        <option value="all">Saare</option><option value="pending">Pending</option>
+        <option value="confirmed">Confirmed</option><option value="dispatched">Dispatched</option><option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div id="myOrdersList"></div>`;
+  renderMyOrdersList();
+}
+function renderMyOrdersList(){
+  const f=document.getElementById('oFilter')?.value||'all';
+  const el=document.getElementById('myOrdersList');if(!el)return;
+  let list=orders.filter(o=>o.spId===curUser.id);
+  if(f!=='all')list=list.filter(o=>o.status===f);
+  if(!list.length){el.innerHTML='<div class="es"><div class="ei">🛒</div>Koi order nahi</div>';return;}
+  el.innerHTML=list.map(o=>orderCard(o,false)).join('');
+}
+
+function orderCard(o,isAdmin){
+  return`<div class="ocard ${o.status}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700">${o.id}</span>
+          ${sBadge(o.status)}
+          ${o.pri==='urgent'?'<span class="badge b-red">🔴 Urgent</span>':o.pri==='high'?'<span class="badge b-gold">🟡 High</span>':''}
+        </div>
+        <div style="margin-top:5px;font-weight:700;font-size:14px">${o.custName} <span style="font-size:12px;color:var(--mut)">📱 ${o.custMob}</span></div>
+        <div style="font-size:12px;color:var(--mut);margin-top:2px">👤 ${o.spName} | 📅 ${o.date} | 💳 ${o.pay}</div>
+        ${o.notes?`<div style="font-size:12px;color:var(--mut);margin-top:3px">📝 ${o.notes}</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('hi-IN')}</div>
+        <div style="font-size:11px;color:var(--mut)">${o.items.length} items</div>
+      </div>
+    </div>
+    <div class="oitems">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:4px;padding:4px 0;font-size:10px;color:var(--mut);font-weight:600;border-bottom:1px solid var(--bor);margin-bottom:4px">
+        <span>ITEM / CODE</span><span>SIZE</span><span>QTY</span><span>RATE</span><span>AMOUNT</span>
+      </div>
+      ${o.items.map(it=>`<div class="oitem">
+        <span><b>${it.name}</b><br><span style="font-size:10px;color:var(--mut);font-family:monospace">${it.code}</span></span>
+        <span>${it.size||'—'}</span>
+        <span>${it.qty} ${it.unit}</span>
+        <span>₹${it.rate}</span>
+        <span><b>₹${it.total.toLocaleString('hi-IN')}</b></span>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
+      ${isAdmin&&o.status==='pending'?`<button class="btn btn-blue" style="padding:5px 12px;font-size:12px" onclick="confirmO('${o.id}')">✅ Confirm</button>`:''}
+      ${isAdmin&&o.status==='confirmed'?`<button class="btn btn-grn" style="padding:5px 12px;font-size:12px" onclick="openDisp('${o.id}')">🚚 Dispatch</button>`:''}
+      ${o.status==='dispatched'?`<button class="btn btn-pur" style="padding:5px 12px;font-size:12px" onclick="viewAck('${o.id}')">📨 ACK Dekho</button>`:''}
+      ${isAdmin&&o.status!=='cancelled'&&o.status!=='dispatched'?`<button class="btn btn-red" style="padding:5px 12px;font-size:12px" onclick="cancelO('${o.id}')">✕ Cancel</button>`:''}
+    </div>
+  </div>`;
+}
+
+function sBadge(s){return s==='pending'?'<span class="badge b-gold">⏳ Pending</span>':s==='confirmed'?'<span class="badge b-blue">✅ Confirmed</span>':s==='dispatched'?'<span class="badge b-grn">🚚 Dispatched</span>':'<span class="badge b-red">✕ Cancelled</span>';}
+function confirmO(id){const o=orders.find(x=>x.id===id);if(!o)return;o.status='confirmed';addNotif('order','✅ Order Confirm: '+id,o.custName+' ka order confirm — Dispatch ready',id);toast('Order '+id+' confirm!');go('orders');}
+function cancelO(id){if(!confirm('Cancel?'))return;const o=orders.find(x=>x.id===id);if(!o)return;o.status='cancelled';addNotif('order','❌ Cancel: '+id,o.custName+' ka order cancel ho gaya',id);toast('Cancel ho gaya','var(--red)');go('orders');}
+
+// ============================================================
+// DISPATCH PAGE
+// ============================================================
+function renderDispatchPage(pc,ta){
+  const ready=orders.filter(o=>o.status==='confirmed');
+  const done=orders.filter(o=>o.status==='dispatched');
+  pc.innerHTML=`
+    <div class="sec-h"><span class="sec-t">🚚 Dispatch Management</span><span style="font-size:13px;color:var(--mut)">${ready.length} orders ready</span></div>
+    <div class="card" style="margin-bottom:15px">
+      <div class="card-h"><span class="card-t">📋 Dispatch Flow</span></div>
+      <div class="steps">
+        <div class="step done"><div class="sdot">✓</div><div class="slbl">Order Mila</div></div>
+        <div class="step done"><div class="sdot">✓</div><div class="slbl">Team Notify</div></div>
+        <div class="step active"><div class="sdot">⚙</div><div class="slbl">Processing</div></div>
+        <div class="step"><div class="sdot">📦</div><div class="slbl">Packing</div></div>
+        <div class="step"><div class="sdot">🚚</div><div class="slbl">Dispatch</div></div>
+        <div class="step"><div class="sdot">✅</div><div class="slbl">Party ACK</div></div>
+      </div>
+    </div>
+    ${ready.length?`<div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--acc)">⏳ Dispatch Pending (${ready.length})</div>`+ready.map(o=>`<div class="ocard confirmed"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">📱 ${o.custMob} | ₹${o.total.toLocaleString('hi-IN')} | ${o.items.length} items | ${o.pay}</div></div><div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('hi-IN')}</div></div><div class="oitems" style="margin-top:8px">${o.items.map(it=>'<div class="oitem"><span><b>'+it.name+'</b> ('+it.code+')</span><span>'+it.qty+' '+it.unit+' | Size: '+(it.size||'—')+'</span></div>').join('')}</div><div style="margin-top:10px"><button class="btn btn-grn" style="padding:6px 15px;font-size:13px" onclick="openDisp('${o.id}')">🚚 Dispatch Karo + Party Notify</button></div></div>`).join(''):''}
+    ${done.length?`<div style="height:1px;background:var(--bor);margin:14px 0"></div><div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--grn)">✅ Dispatched (${done.length})</div>`+done.map(o=>`<div class="ocard dispatched"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">🚚 ${o.disp?.courier||'—'} | Track: ${o.disp?.track||'—'}</div><div style="font-size:12px;color:var(--grn);margin-top:2px">📱 Party ko notify kiya gaya ✅</div></div><span class="badge b-grn">✅ Done</span></div><div style="margin-top:8px;display:flex;gap:7px"><button class="btn btn-pur" style="padding:5px 12px;font-size:12px" onclick="viewAck('${o.id}')">📨 ACK</button><button class="btn btn-out" style="padding:5px 12px;font-size:12px" onclick="resendAck('${o.id}')">🔄 Resend</button></div></div>`).join(''):''}
+    ${!ready.length&&!done.length?'<div class="es"><div class="ei">🚚</div>Koi order dispatch ke liye nahi</div>':''}`;
+}
+
+// ============================================================
+// MAPS
+// ============================================================
+function renderMapPage(pc){
+  pc.innerHTML=`
+    <div class="card" style="margin-bottom:15px">
+      <div class="card-h">
+        <span class="card-t">🗺️ Live Sales Team Tracking</span>
+        <select id="mapFilter" onchange="refreshDashMap()" style="padding:5px 10px;font-size:12px;background:var(--sur2);border:1px solid var(--bor);color:var(--txt);border-radius:6px;outline:none">
+          <option value="all">Saare Agents</option>
+          ${spList.map((s,i)=>`<option value="${i}">${s.name}</option>`).join('')}
+        </select>
+      </div>
+      <div id="dashMap"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:9px;font-size:12px;color:var(--mut)">
+        ${spList.map((s,i)=>`<span><span style="color:${C[i]}">●</span> ${s.name.split(' ')[0]}</span>`).join('')}
+        <span style="margin-left:auto">📍 Visit &nbsp;🏠 Start &nbsp;➖ Route</span>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-h"><span class="card-t">👥 Agent Status</span></div>
+        ${spList.map((s,i)=>`<div class="trow"><div class="tdot" style="background:${s.checkedIn?C[i]:'var(--mut)'}"></div><div style="flex:1"><div style="font-weight:700;font-size:13px">${s.name}</div><div style="font-size:11px;color:var(--mut)">${s.zone} • ${s.visits} visits • ${s.orders} orders</div></div><span class="badge ${s.checkedIn?'b-grn':'b-red'}">${s.checkedIn?'LIVE':'Offline'}</span></div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="card-t">🛣️ Route Timeline</span><span id="rtAgentName" style="font-size:12px;color:var(--mut)"></span></div>
+        <div class="apills">${spList.map((s,i)=>`<div class="pill${i===selAgt?' act':''}" onclick="showRoute2(${i})" style="${i===selAgt?'background:'+C[i]+';color:#000;border-color:'+C[i]:''}"><span style="width:7px;height:7px;border-radius:50%;background:${C[i]};display:inline-block;margin-right:4px"></span>${s.name.split(' ')[0]}</div>`).join('')}</div>
+        <div id="routeTimeline2"></div>
+      </div>
+    </div>`;
+  setTimeout(()=>{initDashMap();showRoute2(selAgt);},100);
+}
+function renderMyMapPage(pc){
+  const sp=spList.find(s=>s.id===curUser.id);
+  pc.innerHTML=`
+    <div class="card" style="margin-bottom:15px">
+      <div class="card-h">
+        <span class="card-t">📍 Meri Location aur Route</span>
+        <span class="badge ${sp?.checkedIn?'b-grn':'b-red'}">${sp?.checkedIn?'● LIVE':'● Offline'}</span>
+      </div>
+      <div id="trackMap"></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-h"><span class="card-t">🛣️ Aaj ka Route</span></div>
+        <div id="rtl" class="rtl">${sp?sp.route.map(s=>`<div class="rs"><div class="rdot" style="background:${s.t==='cur'?C[0]+'22':'transparent'};border-color:${C[0]}">${s.t==='start'?'🏠':s.t==='cur'?'🔵':'📍'}</div><div style="flex:1"><div style="font-weight:700;font-size:13px">${s.lbl}</div><div style="font-size:11px;color:var(--mut)">${s.t==='visit'?'Customer Visit':s.t==='cur'?'<span style="color:var(--grn)">● Live</span>':''}</div></div><div style="font-size:11px;color:var(--mut)">${s.tm}</div></div>`).join(''):'No data'}</div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="card-t">📋 Aaj ka Summary</span></div>
+        <div>
+          <div class="trow"><div class="tdot" style="background:var(--grn)"></div><div style="flex:1">Check-In Time</div><b>${sp?.cin||'—'}</b></div>
+          <div class="trow"><div class="tdot" style="background:var(--acc)"></div><div style="flex:1">Total Visits</div><b>${sp?.visits||0}</b></div>
+          <div class="trow"><div class="tdot" style="background:var(--blue)"></div><div style="flex:1">Orders Liye</div><b>${sp?.orders||0}</b></div>
+          <div class="trow" style="border:none"><div class="tdot" style="background:var(--pur)"></div><div style="flex:1">Distance</div><b>${sp?.km||'0 km'}</b></div>
+        </div>
+      </div>
+    </div>`;
+  setTimeout(()=>initMyMap(sp),100);
+}
+
+function initDashMap(){
+  const el=document.getElementById('dashMap');if(!el)return;
+  if(dMap){dMap.invalidateSize();refreshDashMap();return;}
+  dMap=L.map('dashMap',{zoomControl:true,attributionControl:false}).setView([19.076,72.877],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(dMap);
+  refreshDashMap();
+}
+function refreshDashMap(){
+  if(!dMap)return;dL.forEach(l=>l.remove());dL=[];
+  const fv=document.getElementById('mapFilter')?.value||'all';
+  const list=fv==='all'?spList.map((s,i)=>({s,i})):[{s:spList[+fv],i:+fv}];
+  list.forEach(({s,i})=>{
+    if(!s.checkedIn&&fv==='all')return;
+    const col=C[i%C.length],pts=s.route.map(r=>[r.lat,r.lng]);
+    dL.push(L.polyline(pts,{color:col,weight:3,opacity:.75,dashArray:'7,4'}).addTo(dMap));
+    s.route.forEach(r=>{
+      const ic=r.t==='cur'?L.divIcon({html:`<div style="width:13px;height:13px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 0 0 5px ${col}44"></div>`,className:'',iconSize:[13,13],iconAnchor:[6,6]}):r.t==='start'?L.divIcon({html:'<div style="font-size:15px">🏠</div>',className:'',iconSize:[16,16],iconAnchor:[8,8]}):L.divIcon({html:'<div style="font-size:13px">📍</div>',className:'',iconSize:[13,13],iconAnchor:[6,6]});
+      dL.push(L.marker([r.lat,r.lng],{icon:ic}).addTo(dMap).bindPopup('<b>'+r.lbl+'</b><br><small>'+s.name+' • '+r.tm+'</small>'));
+    });
+    const cur=s.route[s.route.length-1];
+    dL.push(L.marker([cur.lat,cur.lng],{icon:L.divIcon({html:'<div style="background:'+col+';color:#000;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap;margin-top:4px">'+s.name.split(' ')[0]+'</div>',className:'',iconSize:[60,20],iconAnchor:[30,-10]})}).addTo(dMap));
+  });
+  if(fv==='all')dMap.setView([19.076,72.877],12);
+  else{const cur=spList[+fv].route[spList[+fv].route.length-1];dMap.setView([cur.lat,cur.lng],14);}
+}
+function showRoute2(idx){
+  selAgt=idx;const s=spList[idx],col=C[idx%C.length];
+  const el=document.getElementById('routeTimeline2');
+  if(el)el.innerHTML=s.route.map(r=>`<div class="rs"><div class="rdot" style="background:${r.t==='cur'?col+'22':'transparent'};border-color:${col}">${r.t==='start'?'🏠':r.t==='cur'?'🔵':'📍'}</div><div style="flex:1"><div style="font-weight:700;font-size:13px">${r.lbl}</div><div style="font-size:11px;color:var(--mut)">${r.t==='visit'?'Customer Visit':r.t==='cur'?'<span style="color:var(--grn)">● Live</span>':''}</div></div><div style="font-size:11px;color:var(--mut)">${r.tm}</div></div>`).join('');
+  const rn=document.getElementById('rtAgentName');if(rn)rn.textContent=s.name;
+  document.querySelectorAll('.pill').forEach((p,i)=>{p.className='pill'+(i===idx?' act':'');p.style.cssText=i===idx?'background:'+col+';color:#000;border-color:'+col:'';});
+  if(dMap){const cur=s.route[s.route.length-1];dMap.setView([cur.lat,cur.lng],14);}
+}
+function initMyMap(sp){
+  const el=document.getElementById('trackMap');if(!el)return;
+  if(tMap){tMap.invalidateSize();return;}
+  tMap=L.map('trackMap',{zoomControl:true,attributionControl:false}).setView([19.076,72.877],13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tMap);
+  if(sp){
+    const col=C[0];
+    tL.push(L.polyline(sp.route.map(r=>[r.lat,r.lng]),{color:col,weight:4,opacity:.85}).addTo(tMap));
+    sp.route.forEach((r,i)=>{
+      const ic=r.t==='cur'?L.divIcon({html:`<div style="width:18px;height:18px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 0 0 6px ${col}33"></div>`,className:'',iconSize:[18,18],iconAnchor:[9,9]}):r.t==='start'?L.divIcon({html:`<div style="background:var(--sur2);color:#fff;padding:4px 9px;border-radius:8px;font-size:11px;font-weight:700;border:2px solid ${col};white-space:nowrap">🏠</div>`,className:'',iconSize:[60,24],iconAnchor:[30,12]}):L.divIcon({html:`<div style="background:${col};color:#000;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;border:2px solid #fff">${i}</div>`,className:'',iconSize:[20,20],iconAnchor:[10,10]});
+      tL.push(L.marker([r.lat,r.lng],{icon:ic}).addTo(tMap).bindPopup('<b>'+r.lbl+'</b><br><small>🕐 '+r.tm+'</small>'));
+    });
+    tMap.fitBounds(L.latLngBounds(sp.route.map(r=>[r.lat,r.lng])),{padding:[40,40]});
+  }
+}
+
+// ============================================================
+// CUSTOMERS
+// ============================================================
+function renderCustomersPage(pc,ta){
+  const isAdmin=curUser.role==='admin';
+  ta.innerHTML=`<input type="text" class="si" placeholder="🔍 Search..." oninput="filterCustomers(this.value)"><button class="btn btn-gold" style="margin-left:8px" onclick="openM('mCust');updCustSP()">+ Customer Add</button>`;
+  const list=isAdmin?customers:customers.filter(c=>c.spId===curUser.id);
+  pc.innerHTML=`<div class="cg" id="custGrid">${renderCustCards(list)}</div>`;
+}
+function filterCustomers(q){const el=document.getElementById('custGrid');if(!el)return;const list=(curUser.role==='admin'?customers:customers.filter(c=>c.spId===curUser.id)).filter(c=>c.name.toLowerCase().includes(q.toLowerCase())||c.mob.includes(q)||(c.gst&&c.gst.includes(q.toUpperCase())));el.innerHTML=renderCustCards(list);}
+function renderCustCards(list){
+  if(!list.length)return'<div class="es" style="grid-column:1/-1"><div class="ei">👥</div>Koi customer nahi</div>';
+  return list.map(c=>`<div class="cc"><div class="cav">${c.name.charAt(0)}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${c.name}</div>${c.gst?`<div style="font-size:11px;color:var(--mut);font-family:monospace">GST: ${c.gst}</div>`:''}<div style="font-size:11px;color:var(--mut);margin-top:4px">📱 ${c.mob}${c.city?' &nbsp;📍 '+c.city:''}</div>${c.con?`<div style="font-size:11px;color:var(--mut)">👤 ${c.con}</div>`:''}<span class="badge b-gold" style="margin-top:5px">${c.type}</span></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn btn-gold" style="padding:4px 10px;font-size:11px" onclick="quickOrder(${c.id})">🛒</button><button class="btn btn-red" style="padding:4px 10px;font-size:11px" onclick="delCust(${c.id})">🗑</button></div></div>`).join('');
+}
+function saveCust(){
+  const n=document.getElementById('cu-name').value.trim(),m=document.getElementById('cu-mob').value.trim();
+  if(!n||!m){toast('Naam aur mobile required!','var(--red)');return;}
+  const spId=document.getElementById('cu-sp').value||curUser.id;
+  const sp=spList.find(s=>s.id===spId)||{name:'Admin'};
+  customers.push({id:Date.now(),name:n,gst:document.getElementById('cu-gst').value.trim().toUpperCase(),mob:m,con:document.getElementById('cu-con').value.trim(),city:document.getElementById('cu-city').value.trim(),state:document.getElementById('cu-state').value.trim(),addr:document.getElementById('cu-addr').value.trim(),type:document.getElementById('cu-type').value,spId,spName:sp.name});
+  closeM('mCust');['cu-name','cu-gst','cu-mob','cu-con','cu-city','cu-state','cu-addr'].forEach(id=>document.getElementById(id).value='');
+  toast('Customer add: '+n);updS();go('customers');
+}
+function delCust(id){customers=customers.filter(c=>c.id!==id);toast('Deleted','var(--red)');go('customers');}
+function updCustSP(){
+  const s=document.getElementById('cu-sp');if(!s)return;
+  s.innerHTML=spList.map(sp=>`<option value="${sp.id}">${sp.name}</option>`).join('');
+  if(curUser.role==='sales')s.value=curUser.id;
+}
+function quickOrder(cid){
+  updOrderCust();openM('mOrder');
+  setTimeout(()=>document.getElementById('o-cust').value=cid,100);
+}
+
+// ============================================================
+// PRODUCTS
+// ============================================================
+function renderProductsPage(pc,ta){
+  ta.innerHTML='<button class="btn btn-gold" onclick="openM(\'mProd\')">+ Product Add</button>';
+  pc.innerHTML=`<div class="card"><div class="tw"><table><thead><tr><th>Item Code</th><th>Product Name</th><th>Category</th><th>Price/Unit</th><th>Unit</th><th>Sizes</th><th>HSN</th><th>Action</th></tr></thead><tbody id="prodTbl"></tbody></table></div></div>`;
+  renderProdTable();
+}
+function renderProdTable(){
+  const tb=document.getElementById('prodTbl');if(!tb)return;
+  if(!products.length){tb.innerHTML='<tr><td colspan="8" class="es">Koi product nahi</td></tr>';return;}
+  tb.innerHTML=products.map((p,i)=>`<tr><td style="font-family:monospace;color:var(--acc)">${p.code}</td><td><b>${p.name}</b><div style="font-size:11px;color:var(--mut)">${p.desc||''}</div></td><td><span class="badge b-gold">${p.cat}</span></td><td><b>₹${p.price}</b></td><td>${p.unit}</td><td style="font-size:12px">${p.sizes||'—'}</td><td style="font-family:monospace;font-size:12px">${p.hsn||'—'}</td><td><button class="btn btn-red" style="padding:3px 9px;font-size:11px" onclick="delProd(${i})">🗑</button></td></tr>`).join('');
+}
+function saveProd(){
+  const n=document.getElementById('p-name').value.trim(),c=document.getElementById('p-code').value.trim().toUpperCase();
+  if(!n||!c){toast('Name aur Code required!','var(--red)');return;}
+  products.push({id:'p'+Date.now(),name:n,code:c,cat:document.getElementById('p-cat').value,price:parseFloat(document.getElementById('p-price').value)||0,unit:document.getElementById('p-unit').value,hsn:document.getElementById('p-hsn').value.trim(),sizes:document.getElementById('p-sizes').value.trim(),desc:document.getElementById('p-desc').value.trim()});
+  closeM('mProd');['p-name','p-code','p-price','p-hsn','p-sizes','p-desc'].forEach(id=>document.getElementById(id).value='');
+  toast('Product add: '+n);renderProdTable();
+}
+function delProd(i){products.splice(i,1);renderProdTable();toast('Deleted','var(--red)');}
+
+// ============================================================
+// SALESPERSONS (Admin only)
+// ============================================================
+function renderSPPage(pc,ta){
+  ta.innerHTML='<button class="btn btn-gold" onclick="openAddSP()">+ Salesperson Add</button>';
+  pc.innerHTML=`<div class="card"><div class="tw"><table><thead><tr><th>Name</th><th>User ID</th><th>Mobile</th><th>Zone</th><th>Status</th><th>Today</th><th>Orders</th><th>Action</th></tr></thead><tbody id="spTbl"></tbody></table></div></div>`;
+  renderSPTable();
+}
+function renderSPTable(){
+  const tb=document.getElementById('spTbl');if(!tb)return;
+  if(!spList.length){tb.innerHTML='<tr><td colspan="8" class="es">Koi salesperson nahi</td></tr>';return;}
+  tb.innerHTML=spList.map((s,i)=>`<tr><td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:7px;background:${C[i%C.length]}22;border:1px solid ${C[i%C.length]};display:flex;align-items:center;justify-content:center;font-weight:700;color:${C[i%C.length]}">${s.name.charAt(0)}</div><b>${s.name}</b></div></td><td style="font-family:monospace;color:var(--acc)">${s.id}</td><td>📱 ${s.mob}</td><td>${s.zone}</td><td><span class="badge ${s.status==='active'?'b-grn':'b-red'}">${s.status==='active'?'Active':'Inactive'}</span></td><td><span class="badge ${s.checkedIn?'b-grn':'b-red'}">${s.checkedIn?'● Present':'● Absent'}</span></td><td>${s.orders}</td><td><button class="btn btn-out" style="padding:4px 10px;font-size:11px" onclick="editSP(${i})">✏️</button> <button class="btn btn-red" style="padding:4px 10px;font-size:11px" onclick="deleteSP(${i})">🗑</button></td></tr>`).join('');
+}
+let editSPIdx=-1;
+function openAddSP(){editSPIdx=-1;document.getElementById('mSPTitle').textContent='➕ Salesperson Add Karein';['sp-name','sp-id','sp-pass','sp-mob','sp-zone'].forEach(id=>document.getElementById(id).value='');document.getElementById('sp-status').value='active';openM('mSP');}
+function editSP(i){
+  const s=spList[i];editSPIdx=i;
+  document.getElementById('mSPTitle').textContent='✏️ Edit: '+s.name;
+  document.getElementById('sp-name').value=s.name;document.getElementById('sp-id').value=s.id;
+  document.getElementById('sp-pass').value=s.pass;document.getElementById('sp-mob').value=s.mob;
+  document.getElementById('sp-zone').value=s.zone;document.getElementById('sp-status').value=s.status;
+  openM('mSP');
+}
+function saveSP(){
+  const n=document.getElementById('sp-name').value.trim(),id=document.getElementById('sp-id').value.trim(),pass=document.getElementById('sp-pass').value.trim();
+  if(!n||!id||!pass){toast('Naam, ID aur Password required!','var(--red)');return;}
+  if(id==='admin'){toast('admin ID reserved hai!','var(--red)');return;}
+  // Check duplicate ID (except when editing same person)
+  const dup=spList.findIndex(s=>s.id===id);
+  if(dup!==-1&&dup!==editSPIdx){toast('Ye ID pehle se exist karta hai!','var(--red)');return;}
+  const data={id,name:n,pass,role:'sales',mob:document.getElementById('sp-mob').value.trim(),zone:document.getElementById('sp-zone').value.trim(),status:document.getElementById('sp-status').value,joinDate:new Date().toISOString().split('T')[0],checkedIn:false,cin:'—',visits:0,orders:0,km:'0 km',pd:0,route:[{lat:19.076,lng:72.877,lbl:'Office',t:'start',tm:'—'}]};
+  if(editSPIdx===-1){spList.push(data);genAtt(id);toast('Salesperson add: '+n);}
+  else{data.checkedIn=spList[editSPIdx].checkedIn;data.cin=spList[editSPIdx].cin;data.visits=spList[editSPIdx].visits;data.orders=spList[editSPIdx].orders;data.km=spList[editSPIdx].km;data.pd=spList[editSPIdx].pd;data.route=spList[editSPIdx].route;spList[editSPIdx]=data;toast('Updated: '+n);}
+  closeM('mSP');renderSPTable();
+}
+function deleteSP(i){if(!confirm('Delete karna chahte hain?'))return;spList.splice(i,1);renderSPTable();toast('Deleted','var(--red)');}
+
+// ============================================================
+// ATTENDANCE
+// ============================================================
+function renderAttPage(pc){
+  const uid=curUser.role==='admin'?'admin':curUser.id;
+  const sp=curUser.role==='admin'?{name:'Admin',visits:0,orders:0,km:'—',pd:22}:spList.find(s=>s.id===curUser.id)||{};
+  pc.innerHTML=`
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:14px">
+      <div class="card"><div class="card-h"><span class="card-t">📊 Summary</span></div>
+        <div style="display:flex;flex-direction:column;gap:9px;margin-top:4px">
+          <div class="trow"><div class="tdot" style="background:var(--grn)"></div><div style="flex:1;font-size:13px;font-weight:600">Present Days</div><div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--grn)">${sp.pd||0}</div></div>
+          <div class="trow"><div class="tdot" style="background:var(--red)"></div><div style="flex:1;font-size:13px;font-weight:600">Absent Days</div><div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--red)">3</div></div>
+          <div class="trow"><div class="tdot" style="background:var(--acc)"></div><div style="flex:1;font-size:13px;font-weight:600">Total Orders</div><div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--acc)">${sp.orders||orders.filter(o=>o.spId===curUser.id).length}</div></div>
+          <div class="trow" style="border:none"><div class="tdot" style="background:var(--pur)"></div><div style="flex:1;font-size:13px;font-weight:600">Total Visits</div><div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--pur)">${sp.visits||visits.filter(v=>v.spId===curUser.id).length}</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="card-t">📅 March 2025 — ${sp.name||'Admin'}</span></div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:6px">
+          <div style="text-align:center;font-size:10px;color:var(--mut);font-weight:600">Su</div><div style="text-align:center;font-size:10px;color:var(--mut);font-weight:600">Mo</div><div style="text-align:center;font-size:10px;color:var(--mut);font-weight:600">Tu</div><div style="text-align:center;font-size:10px;color:var(--mut);font-weight:600">We</div><div style="text-align:center;font-size:10px;color:var(--mut);font-weight:600">Th</div><div style="text-align:center;font-size:10px;color:var(--mut);font-weight:600">Fr</div><div style="text-align:center;font-size:10px;color:var(--mut);font-weight:600">Sa</div>
+        </div>
+        <div class="acal" id="acal">${buildCal(uid)}</div>
+        <div style="display:flex;gap:12px;margin-top:10px;font-size:11px"><span><span style="color:var(--grn)">■</span> Present</span><span><span style="color:var(--red)">■</span> Absent</span><span><span style="color:var(--acc)">■</span> Aaj</span></div>
+      </div>
+    </div>`;
+}
+function buildCal(uid){
+  const data=att[uid]||{};let cells='';
+  for(let i=0;i<6;i++)cells+='<div class="aday" style="background:transparent;border-color:transparent"></div>';
+  for(let d=1;d<=31;d++){
+    const s=data[d]||'fut',sun=new Date(2025,2,d).getDay()===0;
+    let cls='aday',lbl='';
+    if(d===16){cls+=' td';lbl='<div style="font-size:9px;color:var(--acc)">Aaj</div>';}
+    else if(s==='pr'){cls+=' pr';lbl='<div style="font-size:9px;color:var(--grn)">P</div>';}
+    else if(s==='ab'&&!sun&&d<16){cls+=' ab';lbl='<div style="font-size:9px;color:var(--red)">A</div>';}
+    cells+='<div class="'+cls+'"><div class="adn">'+d+'</div>'+lbl+'</div>';
+  }
+  return cells;
+}
+
+// ============================================================
+// REPORTS (Admin only)
+// ============================================================
+function renderReportsPage(pc){
+  const totalRev=orders.filter(o=>o.status==='dispatched').reduce((s,o)=>s+o.total,0);
+  const topSP=spList.slice().sort((a,b)=>b.orders-a.orders)[0];
+  pc.innerHTML=`
+    <div class="g4" style="margin-bottom:16px">
+      <div class="sc gold"><div class="sc-l">Total Revenue</div><div class="sc-v">₹${totalRev.toLocaleString('hi-IN')}</div><div class="sc-s">Dispatched orders</div></div>
+      <div class="sc grn"><div class="sc-l">Total Orders</div><div class="sc-v">${orders.length}</div><div class="sc-s">All orders</div></div>
+      <div class="sc blue"><div class="sc-l">Customers</div><div class="sc-v">${customers.length}</div><div class="sc-s">Registered</div></div>
+      <div class="sc pur"><div class="sc-l">Top Salesperson</div><div class="sc-v" style="font-size:16px">${topSP?topSP.name.split(' ')[0]:'—'}</div><div class="sc-s">${topSP?topSP.orders+' orders':'No data'}</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-h"><span class="card-t">📊 Salesperson Performance</span></div>
+        <div class="tw"><table><thead><tr><th>Name</th><th>Orders</th><th>Visits</th><th>Status</th></tr></thead><tbody>
+        ${spList.map(s=>`<tr><td><b>${s.name}</b></td><td>${s.orders}</td><td>${s.visits}</td><td><span class="badge ${s.checkedIn?'b-grn':'b-red'}">${s.checkedIn?'Active':'Offline'}</span></td></tr>`).join('')}
+        </tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="card-t">📦 Top Products (by Orders)</span></div>
+        ${products.slice(0,5).map(p=>`<div class="trow"><div style="flex:1"><div style="font-weight:700;font-size:13px">${p.name}</div><div style="font-size:11px;color:var(--mut);font-family:monospace">${p.code}</div></div><span class="badge b-gold">${p.cat}</span></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// ORDER MODAL & ITEMS
+// ============================================================
+function openOrderModal(){
+  iCnt=0;document.getElementById('orderItemsBox').innerHTML='';
+  document.getElementById('o-notes').value='';document.getElementById('o-pri').value='normal';
+  updOrderCust();addOItem();
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('o-date').value=today;
+  openM('mOrder');
+}
+function addOItem(){
+  iCnt++;const i=iCnt;
+  const d=document.createElement('div');d.id='oi'+i;d.className='oir';
+  // Product dropdown options
+  const opts=products.map(p=>`<option value="${p.code}" data-price="${p.price}" data-unit="${p.unit}">${p.name} (${p.code})</option>`).join('');
+  d.innerHTML=`
+    <div class="fgr"><label>Item Name / Code</label>
+      <select id="isel${i}" onchange="fillItem(${i})"><option value="">-- Product chunein --</option>${opts}</select>
+    </div>
+    <div class="fgr"><label>Item Code</label><input type="text" id="icode${i}" placeholder="VMT-001" style="text-transform:uppercase" oninput="calcTotal()"></div>
+    <div class="fgr"><label>Size</label><input type="text" id="isize${i}" placeholder="12x24, 600x600..." oninput="calcTotal()"></div>
+    <div class="fgr"><label>Qty</label><input type="number" id="iqty${i}" placeholder="0" min="1" oninput="calcTotal()"></div>
+    <div class="fgr"><label>Rate (₹)</label><input type="number" id="irate${i}" placeholder="0" min="0" oninput="calcTotal()"></div>
+    <button class="btn btn-red" style="padding:8px 10px;margin-bottom:0;align-self:flex-end" onclick="rmOItem(${i})">✕</button>`;
+  document.getElementById('orderItemsBox').appendChild(d);
+}
+function fillItem(i){
+  const sel=document.getElementById('isel'+i);if(!sel)return;
+  const opt=sel.options[sel.selectedIndex];
+  const code=sel.value;
+  const price=opt.dataset.price;
+  const unit=opt.dataset.unit;
+  const p=products.find(x=>x.code===code);
+  if(p){
+    document.getElementById('icode'+i).value=p.code;
+    document.getElementById('irate'+i).value=p.price;
+    if(p.sizes)document.getElementById('isize'+i).placeholder=p.sizes;
+  }
+  calcTotal();
+}
+function rmOItem(i){const e=document.getElementById('oi'+i);if(e)e.remove();calcTotal();}
+function calcTotal(){
+  let t=0;
+  for(let i=1;i<=iCnt;i++){
+    const q=parseFloat(document.getElementById('iqty'+i)?.value||0);
+    const r=parseFloat(document.getElementById('irate'+i)?.value||0);
+    if(!isNaN(q)&&!isNaN(r))t+=q*r;
+  }
+  document.getElementById('oTotal').textContent='₹ '+t.toLocaleString('hi-IN');
+}
+function updOrderCust(){
+  const s=document.getElementById('o-cust');if(!s)return;
+  const list=curUser.role==='admin'?customers:customers.filter(c=>c.spId===curUser.id);
+  s.innerHTML='<option value="">-- Party chunein --</option>'+list.map(c=>`<option value="${c.id}">${c.name} — ${c.mob}</option>`).join('');
+}
+function saveOrder(){
+  const cid=document.getElementById('o-cust').value;
+  if(!cid){toast('Party select karein!','var(--red)');return;}
+  const cu=customers.find(c=>c.id==cid);
+  const items=[];
+  for(let i=1;i<=iCnt;i++){
+    const sel=document.getElementById('isel'+i);
+    const nm=sel?.options[sel?.selectedIndex]?.text?.split('(')[0]?.trim()||document.getElementById('icode'+i)?.value;
+    const code=document.getElementById('icode'+i)?.value?.trim().toUpperCase();
+    const size=document.getElementById('isize'+i)?.value?.trim();
+    const qty=parseFloat(document.getElementById('iqty'+i)?.value||0);
+    const rate=parseFloat(document.getElementById('irate'+i)?.value||0);
+    const p=products.find(x=>x.code===code);
+    if((nm||code)&&qty>0)items.push({name:nm||code,code:code||'—',size:size||'—',qty,rate,unit:p?.unit||'Pcs',total:qty*rate});
+  }
+  if(!items.length){toast('Kam se kam 1 item add karein!','var(--red)');return;}
+  const total=items.reduce((s,i)=>s+i.total,0);
+  const sp=spList.find(s=>s.id===curUser.id)||{name:'Admin'};
+  const o={id:'ORD-'+String(Date.now()).slice(-5),cid,custName:cu.name,custMob:cu.mob,spId:curUser.id,spName:sp.name||'Admin',date:document.getElementById('o-date').value,ddate:document.getElementById('o-ddate').value||'—',items,total,pay:document.getElementById('o-pay').value,pri:document.getElementById('o-pri').value,notes:document.getElementById('o-notes').value.trim(),status:'pending',createdAt:new Date().toLocaleString('hi-IN'),disp:null};
+  orders.unshift(o);
+  if(curUser.role==='sales'){const s=spList.find(x=>x.id===curUser.id);if(s)s.orders++;}
+  closeM('mOrder');
+  addNotif('order','🛒 New Order: '+o.id,'Party: '+cu.name+' | ₹'+total.toLocaleString('hi-IN')+' | '+o.spName,o.id);
+  toast('Order submit! Team ko notify kiya. ID: '+o.id);
+  updS();updBadges();
+  const pg=document.getElementById('ptitle')?.textContent||'';
+  if(pg.includes('Order'))go(curUser.role==='admin'?'orders':'myorders');
+  else go('dash');
+  setTimeout(()=>toast('📤 Admin team ko '+o.id+' ki notification bheji gai','var(--pur)'),2000);
+}
+
+// ============================================================
+// DISPATCH
+// ============================================================
+function openDisp(id){
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  curDispId=id;
+  document.getElementById('dispOrderInfo').innerHTML=`<div style="background:var(--sur2);border-radius:10px;padding:13px"><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">📱 ${o.custMob} | ₹${o.total.toLocaleString('hi-IN')} | ${o.items.length} items</div><div class="oitems" style="margin-top:9px">${o.items.map(it=>'<div class="oitem"><span><b>'+it.name+'</b> ('+it.code+')</span><span>Size: '+it.size+' | '+it.qty+' '+it.unit+'</span></div>').join('')}</div></div>`;
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('d-date').value=today;
+  ['d-cour','d-track','d-del','d-driver','d-notes'].forEach(id=>document.getElementById(id).value='');
+  updateWA();openM('mDisp');
+}
+function updateWA(){
+  const o=orders.find(x=>x.id===curDispId);if(!o)return;
+  const c=document.getElementById('d-cour')?.value||'[Courier]';
+  const t=document.getElementById('d-track')?.value||'[Tracking No.]';
+  const d=document.getElementById('d-del')?.value||'[Delivery Date]';
+  document.getElementById('waMsg').textContent='Namaskar '+o.custName+' Ji! 🙏\n\nAapka order dispatch ho gaya hai.\n\n📦 Order Details:\nOrder ID: '+o.id+'\nDate: '+o.date+'\nTotal: ₹'+o.total.toLocaleString('hi-IN')+'\nPayment: '+o.pay+'\n\n📋 Items:\n'+o.items.map(it=>'• '+it.name+' ('+it.code+') | '+it.qty+' '+it.unit+' | Size: '+it.size).join('\n')+'\n\n🚚 Delivery Info:\nCourier: '+c+'\nTracking No: '+t+'\nExpected Delivery: '+d+'\n\n✅ Kisi bhi query ke liye contact karein.\n\nDhanyawad! 🙏\nDecoCRM Pro Team';
+}
+function doDispatch(){
+  const o=orders.find(x=>x.id===curDispId);if(!o)return;
+  const c=document.getElementById('d-cour').value.trim();
+  if(!c){toast('Courier naam required!','var(--red)');return;}
+  o.status='dispatched';
+  o.disp={courier:c,track:document.getElementById('d-track').value,date:document.getElementById('d-date').value,del:document.getElementById('d-del').value,driver:document.getElementById('d-driver').value,notes:document.getElementById('d-notes').value,at:new Date().toLocaleString('hi-IN'),waMsg:document.getElementById('waMsg').textContent};
+  closeM('mDisp');
+  addNotif('dispatch','🚚 Dispatched: '+o.id,o.custName+' ko dispatch — '+c,o.id);
+  addNotif('ack','📱 Party ACK: '+o.id,o.custName+' ('+o.custMob+') ko WhatsApp notification bheji',o.id);
+  toast('Order '+o.id+' dispatch! Party ko notify kiya.');
+  setTimeout(()=>toast('📱 '+o.custName+' ('+o.custMob+') ko ACK bheji gai','var(--pur)'),2000);
+  go('dispatch');updS();updBadges();
+}
+function viewAck(id){
+  const o=orders.find(x=>x.id===id);if(!o||!o.disp)return;
+  const d=o.disp;
+  document.getElementById('ackBody').innerHTML=`<div style="background:var(--sur2);border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--grn);margin-bottom:10px">✅ Dispatch Acknowledgement</div><div class="fg"><div><div style="font-size:10px;color:var(--mut)">ORDER ID</div><div style="font-weight:700">${o.id}</div></div><div><div style="font-size:10px;color:var(--mut)">PARTY</div><div style="font-weight:700">${o.custName}</div></div><div><div style="font-size:10px;color:var(--mut)">MOBILE</div><div style="font-weight:700">${o.custMob}</div></div><div><div style="font-size:10px;color:var(--mut)">AMOUNT</div><div style="font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('hi-IN')}</div></div><div><div style="font-size:10px;color:var(--mut)">COURIER</div><div style="font-weight:700">${d.courier}</div></div><div><div style="font-size:10px;color:var(--mut)">TRACKING</div><div style="font-weight:700;font-family:monospace">${d.track||'—'}</div></div><div><div style="font-size:10px;color:var(--mut)">DISPATCH DATE</div><div style="font-weight:700">${d.date}</div></div><div><div style="font-size:10px;color:var(--mut)">DELIVERY</div><div style="font-weight:700">${d.del||'—'}</div></div></div><div class="oitems" style="margin-top:10px">${o.items.map(it=>'<div class="oitem"><span><b>'+it.name+'</b> ('+it.code+')</span><span>'+it.qty+' '+it.unit+' | Size: '+it.size+'</span></div>').join('')}</div></div><div class="wa"><div class="wamsg">${d.waMsg}</div></div><div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:9px;padding:11px;margin-top:12px;font-size:12px;color:var(--grn)">✅ ${o.custName} (${o.custMob}) ko ${d.at} par WhatsApp notification bheji gai.</div>`;
+  openM('mAck');
+}
+function resendAck(id){const o=orders.find(x=>x.id===id);if(!o)return;addNotif('ack','🔄 Resent: '+id,o.custName+' ('+o.custMob+') ko dobara notify kiya',id);toast('📱 Dobara notification bheji','var(--pur)');}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+function addNotif(type,title,body,oid){
+  notifs.unshift({id:Date.now(),type,title,body,oid:oid||null,time:new Date().toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'}),read:false});
+  updBadges();renderND();
+}
+function toggleND(){document.getElementById('ndrop').classList.toggle('open');renderND();}
+document.addEventListener('click',e=>{if(!e.target.closest('.nbell')&&!e.target.closest('.ndrop'))document.getElementById('ndrop').classList.remove('open');});
+function renderND(){
+  const el=document.getElementById('ndropList');if(!el)return;
+  if(!notifs.length){el.innerHTML='<div class="es" style="padding:18px">Koi notification nahi</div>';return;}
+  el.innerHTML=notifs.slice(0,7).map(n=>`<div class="nitem${n.read?'':' unread'}"><div style="display:flex;gap:10px"><span style="font-size:16px">${n.type==='order'?'🛒':n.type==='dispatch'?'🚚':'✅'}</span><div style="flex:1"><div style="font-weight:700;font-size:12px">${n.title}</div><div style="font-size:11px;color:var(--mut);margin-top:2px">${n.body}</div><div style="font-size:10px;color:var(--mut);margin-top:3px">🕐 ${n.time}</div></div>${!n.read?'<div style="width:7px;height:7px;border-radius:50%;background:var(--acc);flex-shrink:0;margin-top:3px"></div>':''}</div></div>`).join('');
+}
+function renderNotifsPage(pc){
+  pc.innerHTML=`<div class="sec-h"><span class="sec-t">🔔 All Notifications</span><button class="btn btn-out" onclick="markAllRead()">✓ Sab Padho</button></div>`+
+  (notifs.length?notifs.map(n=>`<div class="card" style="margin-bottom:10px;border-left:4px solid ${n.type==='order'?'var(--acc)':n.type==='dispatch'?'var(--grn)':'var(--pur)'}"><div style="display:flex;gap:12px"><span style="font-size:20px">${n.type==='order'?'🛒':n.type==='dispatch'?'🚚':'✅'}</span><div style="flex:1"><div style="font-weight:700;font-size:13px">${n.title}${!n.read?' <span style="font-size:10px;background:var(--acc);color:#000;padding:1px 7px;border-radius:10px;margin-left:6px">NEW</span>':''}</div><div style="font-size:12px;color:var(--mut);margin-top:4px">${n.body}</div><div style="font-size:11px;color:var(--mut);margin-top:5px">🕐 ${n.time}</div></div></div></div>`).join(''):'<div class="es"><div class="ei">🔔</div>Koi notification nahi</div>');
+}
+function markAllRead(){notifs.forEach(n=>n.read=true);updBadges();renderND();toast('Sab padh liya');}
+function updBadges(){
+  const u=notifs.filter(n=>!n.read).length;
+  const bc=document.getElementById('bellCnt');if(bc){bc.textContent=u;bc.style.display=u?'flex':'none';}
+  const nb=document.getElementById('notifBadge');if(nb){nb.textContent=u;nb.style.display=u?'flex':'none';}
+  const p=orders.filter(o=>o.status==='pending').length;
+  const pb=document.getElementById('pendBadge');if(pb){pb.textContent=p;pb.style.display=p?'flex':'none';}
+  const dc=orders.filter(o=>o.status==='confirmed').length;
+  const db=document.getElementById('dispBadge');if(db){db.textContent=dc;db.style.display=dc?'flex':'none';}
+}
+
+// STATS
+function updS(){
+  const s1=document.getElementById('s1');if(s1)s1.textContent=customers.length;
+  const s2=document.getElementById('s2');if(s2)s2.textContent=orders.filter(o=>o.status==='pending').length;
+  const s3=document.getElementById('s3');if(s3)s3.textContent=orders.filter(o=>o.status==='confirmed').length;
+  const s4=document.getElementById('s4');if(s4)s4.textContent=orders.filter(o=>o.status==='dispatched').length;
+  const s5=document.getElementById('s5');if(s5)s5.textContent=spList.filter(s=>s.checkedIn).length;
+}
+function openM(id){document.getElementById(id).classList.add('op');}
+function closeM(id){document.getElementById(id).classList.remove('op');}
+document.querySelectorAll('.mov').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('op');}));
+function toast(msg,col){col=col||'var(--grn)';const t=document.getElementById('toast');t.textContent=msg;t.style.borderColor=col;t.style.color=col;t.classList.add('sh');setTimeout(()=>t.classList.remove('sh'),3500);}
+</script>
+</body>
+</html>
