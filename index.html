@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="Permissions-Policy" content="geolocation=self">
 <title>DecoCRM Pro — Decorative Products</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -67,6 +68,15 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;min-he
 .sb-role{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;margin-top:2px;display:inline-block}
 .sb-role.admin{background:rgba(245,158,11,.2);color:var(--acc)}
 .sb-role.sales{background:rgba(59,130,246,.2);color:var(--blue)}
+.sb-role.dispatch{background:rgba(139,92,246,.2);color:var(--pur)}
+.b-pur2{background:rgba(139,92,246,.12);color:var(--pur)}
+.b-ora{background:rgba(249,115,22,.12);color:#f97316}
+.dsp-card{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:14px;margin-bottom:11px;border-left:4px solid var(--pur)}
+.dsp-status{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.dsp-packed{background:rgba(59,130,246,.15);color:var(--blue)}
+.dsp-otd{background:rgba(245,158,11,.15);color:var(--acc)}
+.dsp-delivered{background:rgba(16,185,129,.15);color:var(--grn)}
+.dsp-failed{background:rgba(239,68,68,.15);color:var(--red)}
 .nav{flex:1;padding:8px 0;overflow-y:auto}
 .ni{display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;color:var(--mut);font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .18s;user-select:none}
 .ni:hover{color:var(--txt);background:var(--sur2)}
@@ -157,7 +167,7 @@ select option{background:var(--sur2)}
 .oir{display:grid;grid-template-columns:1.5fr 1fr 0.7fr 0.8fr 0.8fr auto;gap:7px;align-items:end;margin-bottom:8px;padding:10px;background:var(--sur2);border-radius:9px;border:1px solid var(--bor)}
 
 /* ===== MAP ===== */
-#dashMap,#trackMap{height:320px;width:100%;border-radius:10px;border:1px solid var(--bor)}
+#dashMap{height:320px;width:100%;border-radius:10px;border:1px solid var(--bor)}#trackMap{height:420px;width:100%;border-radius:10px;border:1px solid var(--bor)}
 .leaflet-container{background:#0a0e1a!important}
 .leaflet-tile{filter:none}
 .apills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
@@ -257,6 +267,11 @@ select option{background:var(--sur2)}
       <div class="l-err" id="loginErr">❌ Invalid User ID or Password!</div>
       <button class="l-btn" onclick="doLogin()">🚀 Login</button>
       <div class="l-hint">Contact your administrator for login credentials.</div>
+      <div style="text-align:center;margin-top:4px">
+        <button onclick="resetAdminPassword()" style="background:none;border:none;color:var(--mut);font-size:11px;cursor:pointer;text-decoration:underline">
+          Forgot password? Click here to reset to admin123
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -315,7 +330,7 @@ select option{background:var(--sur2)}
     </div>
     <div class="nav" id="navMenu"></div>
     <div class="sb-foot">
-    <div id="sbSyncStatus" style="font-size:10px;text-align:center;margin-bottom:8px;padding:4px 8px;border-radius:6px;background:var(--sur2);color:var(--mut)">⏳ DB Connecting...</div>
+    <div id="sbSyncStatus" style="font-size:10px;text-align:center;margin-bottom:8px;padding:4px 8px;border-radius:6px;background:var(--sur2);color:var(--mut)">⏳ Connecting to DB...</div>
     <button class="lo-btn" onclick="doLogout()">🚪 Logout</button></div>
   </nav>
 
@@ -357,16 +372,35 @@ select option{background:var(--sur2)}
 </div></div>
 
 <!-- CUSTOMER MODAL -->
-<div class="mov" id="mCust"><div class="mo">
-  <div class="mo-h"><div class="mo-t">👥 Add Customer / Party</div><button class="xb" onclick="closeM('mCust')">✕</button></div>
+<div class="mov" id="mCust"><div class="mo" style="max-width:660px">
+  <div class="mo-h"><div class="mo-t">👥 Add Customer</div><button class="xb" onclick="closeM('mCust')">✕</button></div>
   <div class="fg">
-    <div class="fgr full"><label>Party / Firm Name *</label><input type="text" id="cu-name" placeholder="e.g. Gupta Interiors Pvt Ltd"></div>
+    <div class="fgr full"><label>Company / Firm Name *</label><input type="text" id="cu-name" placeholder="e.g. Gupta Interiors Pvt Ltd"></div>
     <div class="fgr"><label>GST Number</label><input type="text" id="cu-gst" placeholder="27AABCU9603R1ZM" maxlength="15" style="text-transform:uppercase"></div>
     <div class="fgr"><label>Mobile Number *</label><input type="tel" id="cu-mob" placeholder="9876543210" maxlength="10"></div>
     <div class="fgr"><label>Contact Person</label><input type="text" id="cu-con" placeholder="Owner / Manager name"></div>
-    <div class="fgr"><label>City</label><input type="text" id="cu-city" placeholder="Mumbai"></div>
+    <div class="fgr"><label>City</label><input type="text" id="cu-city" placeholder="Mumbai" oninput="debounceCustGeo()"></div>
     <div class="fgr"><label>State</label><input type="text" id="cu-state" placeholder="Maharashtra"></div>
-    <div class="fgr full"><label>Address</label><textarea id="cu-addr" rows="2" placeholder="Full address..."></textarea></div>
+    <div class="fgr full">
+      <label>Address <span style="font-size:10px;color:var(--mut);font-weight:400;text-transform:none;letter-spacing:0">(type here — map will auto-update)</span></label>
+      <textarea id="cu-addr" rows="2" placeholder="Shop no, Street, Area..." oninput="debounceCustGeo()"></textarea>
+    </div>
+    <!-- MAP PREVIEW -->
+    <div class="fgr full" id="cuMapSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="margin:0">📍 Location Preview</label>
+        <div id="cuGeoStatus" style="font-size:11px;color:var(--mut)"></div>
+      </div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid var(--bor);height:210px;position:relative;background:var(--sur2)">
+        <div id="cuMapPlaceholder" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mut);gap:8px;font-size:13px;pointer-events:none">
+          <div style="font-size:28px">📍</div>
+          Type city or address — map will appear here
+        </div>
+        <div id="cuMapDiv" style="height:100%;width:100%;display:none"></div>
+      </div>
+      <input type="hidden" id="cu-lat" value="">
+      <input type="hidden" id="cu-lng" value="">
+    </div>
     <div class="fgr"><label>Customer Type</label>
       <select id="cu-type"><option>Retailer</option><option>Wholesaler</option><option>Interior Designer</option><option>Architect</option><option>Contractor</option><option>Direct Customer</option></select>
     </div>
@@ -382,7 +416,7 @@ select option{background:var(--sur2)}
 <div class="mov" id="mOrder"><div class="mo wide">
   <div class="mo-h"><div class="mo-t">🛒 New Order</div><button class="xb" onclick="closeM('mOrder')">✕</button></div>
   <div class="fg">
-    <div class="fgr full"><label>Party / Customer *</label><select id="o-cust"><option value="">-- Select Party --</option></select></div>
+    <div class="fgr full"><label>Customer *</label><select id="o-cust"><option value="">-- Select Customer --</option></select></div>
     <div class="fgr"><label>Order Date</label><input type="date" id="o-date"></div>
     <div class="fgr"><label>Expected Delivery</label><input type="date" id="o-ddate"></div>
   </div>
@@ -418,19 +452,101 @@ select option{background:var(--sur2)}
   <div class="mo-h"><div class="mo-t">🚚 Dispatch Order</div><button class="xb" onclick="closeM('mDisp')">✕</button></div>
   <div id="dispOrderInfo"></div>
   <div class="fg" style="margin-top:14px">
-    <div class="fgr"><label>Courier / Transport *</label><input type="text" id="d-cour" placeholder="e.g. DTDC, BlueDart, Own Vehicle" oninput="updateWA()"></div>
+    <div class="fgr"><label>Courier / Transport *</label>
+      <select id="d-cour-sel" onchange="fillTransportField()" style="margin-bottom:5px"></select>
+      <input type="text" id="d-cour" placeholder="Or type directly..." oninput="updateWA()">
+    </div>
     <div class="fgr"><label>Tracking / Docket No.</label><input type="text" id="d-track" placeholder="Tracking number" oninput="updateWA()"></div>
     <div class="fgr"><label>Dispatch Date</label><input type="date" id="d-date"></div>
     <div class="fgr"><label>Expected Delivery Date</label><input type="date" id="d-del" oninput="updateWA()"></div>
-    <div class="fgr full"><label>Driver / Delivery Person</label><input type="text" id="d-driver" placeholder="Name and mobile number"></div>
+    <div class="fgr"><label>Driver / Delivery Person</label><input type="text" id="d-driver" placeholder="Driver name and mobile"></div>
+    <div class="fgr"><label>Delivery Status</label>
+      <select id="d-delstatus">
+        <option value="packed">📦 Packed</option>
+        <option value="out_for_delivery">🚚 Out for Delivery</option>
+        <option value="dispatched">✅ Dispatched</option>
+      </select>
+    </div>
     <div class="fgr full"><label>Dispatch Notes</label><textarea id="d-notes" rows="2" placeholder="Any additional information..."></textarea></div>
   </div>
   <div class="divider"></div>
-  <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">📱 Party Acknowledgement Message (WhatsApp / SMS):</div>
+  <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">📱 Customer Acknowledgement Message (WhatsApp / SMS):</div>
   <div class="wa"><div class="wamsg" id="waMsg">Loading...</div></div>
   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
     <button class="btn btn-out" onclick="closeM('mDisp')">Cancel</button>
-    <button class="btn btn-grn" onclick="doDispatch()">✅ Confirm Dispatch &amp; Notify Party</button>
+    <button class="btn btn-grn" onclick="doDispatch()">✅ Confirm Dispatch &amp; Notify Customer</button>
+  </div>
+</div></div>
+
+<!-- DELIVERY PROOF MODAL -->
+<div class="mov" id="mDeliveryProof"><div class="mo sm">
+  <div class="mo-h"><div class="mo-t">📸 Update Delivery Status</div><button class="xb" onclick="closeM('mDeliveryProof')">✕</button></div>
+  <div id="deliveryProofOrderInfo" style="background:var(--sur2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+  <div class="fg">
+    <div class="fgr full"><label>Delivery Status *</label>
+      <select id="proof-status">
+        <option value="packed">📦 Packed — Ready for dispatch</option>
+        <option value="out_for_delivery">🚚 Out for Delivery</option>
+        <option value="delivered">✅ Delivered Successfully</option>
+        <option value="failed">❌ Delivery Failed</option>
+      </select>
+    </div>
+    <div class="fgr full"><label>Driver / Person</label><input type="text" id="proof-driver" placeholder="Driver name and mobile"></div>
+    <div class="fgr full"><label>Notes / Remarks</label><textarea id="proof-notes" rows="2" placeholder="Delivery details..."></textarea></div>
+    <div class="fgr full">
+      <label>Proof Photo (Optional)</label>
+      <div class="upload-zone" id="proofUploadZone" style="padding:14px;text-align:center">
+        <input type="file" id="proof-photo" accept="image/*" onchange="handleProofPhoto(event)" style="display:none">
+        <div id="proofPhotoPreview" onclick="document.getElementById('proof-photo').click()" style="cursor:pointer">
+          <div style="font-size:24px;margin-bottom:5px">📷</div>
+          <div style="font-size:12px;color:var(--mut)">Click to take or upload proof photo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px">
+    <button class="btn btn-out" onclick="closeM('mDeliveryProof')">Cancel</button>
+    <button class="btn btn-gold" onclick="saveDeliveryUpdate()">✅ Update Status</button>
+  </div>
+</div></div>
+
+<!-- DISPATCH STAFF MODAL -->
+<div class="mov" id="mDispStaff"><div class="mo sm">
+  <div class="mo-h"><div class="mo-t" id="mDispStaffTitle">➕ Add Dispatch Staff</div><button class="xb" onclick="closeM('mDispStaff')">✕</button></div>
+  <div class="fg">
+    <div class="fgr full"><label>Full Name *</label><input type="text" id="dsp-name" placeholder="Dispatch staff name"></div>
+    <div class="fgr"><label>User ID *</label><input type="text" id="dsp-id" placeholder="e.g. dispatch01" autocomplete="off"></div>
+    <div class="fgr"><label>Password *</label><input type="password" id="dsp-pass" placeholder="Set password" autocomplete="off"></div>
+    <div class="fgr"><label>Mobile</label><input type="tel" id="dsp-mob" placeholder="9876543210" maxlength="10"></div>
+    <div class="fgr"><label>Warehouse / Location</label><input type="text" id="dsp-zone" placeholder="e.g. Main Warehouse"></div>
+    <div class="fgr"><label>Status</label><select id="dsp-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+  </div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px">
+    <button class="btn btn-out" onclick="closeM('mDispStaff')">Cancel</button>
+    <button class="btn btn-gold" onclick="saveDispatchStaff()">✅ Save</button>
+  </div>
+</div></div>
+
+<!-- TRANSPORT MODAL -->
+<div class="mov" id="mTransport"><div class="mo sm">
+  <div class="mo-h"><div class="mo-t" id="mTransportTitle">🚛 Add Transport</div><button class="xb" onclick="closeM('mTransport')">✕</button></div>
+  <div class="fg">
+    <div class="fgr full"><label>Company / Transport Name *</label><input type="text" id="tr-name" placeholder="e.g. DTDC, BlueDart, Mahindra Logistics"></div>
+    <div class="fgr"><label>Contact Person</label><input type="text" id="tr-contact" placeholder="Contact name"></div>
+    <div class="fgr"><label>Mobile Number</label><input type="tel" id="tr-mob" placeholder="9876543210" maxlength="10"></div>
+    <div class="fgr"><label>Vehicle Type</label>
+      <select id="tr-type">
+        <option>Courier Service</option><option>Tempo / Mini Truck</option><option>Full Truck Load</option>
+        <option>Own Vehicle</option><option>Two Wheeler</option><option>Rail / Train</option><option>Air Cargo</option><option>Other</option>
+      </select>
+    </div>
+    <div class="fgr"><label>City / Area</label><input type="text" id="tr-city" placeholder="Mumbai, Surat..."></div>
+    <div class="fgr"><label>Status</label><select id="tr-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+    <div class="fgr full"><label>Notes / Rates</label><textarea id="tr-notes" rows="2" placeholder="Rate info, service area, etc..."></textarea></div>
+  </div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px">
+    <button class="btn btn-out" onclick="closeM('mTransport')">Cancel</button>
+    <button class="btn btn-gold" onclick="saveTransport()">✅ Save</button>
   </div>
 </div></div>
 
@@ -475,24 +591,24 @@ select option{background:var(--sur2)}
 
 <!-- BULK PARTY UPLOAD MODAL -->
 <div class="mov" id="mBulkParty"><div class="mo wide">
-  <div class="mo-h"><div class="mo-t">👥 Bulk Party Upload</div><button class="xb" onclick="closeM('mBulkParty')">✕</button></div>
+  <div class="mo-h"><div class="mo-t">👥 Bulk Customer Upload</div><button class="xb" onclick="closeM('mBulkParty')">✕</button></div>
   <div style="background:var(--sur2);border-radius:10px;padding:13px;margin-bottom:14px">
     <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:7px">📋 CSV Format — columns must be in this order:</div>
-    <div style="font-family:monospace;font-size:11px;color:var(--txt);background:var(--bg);padding:8px 12px;border-radius:6px;border:1px solid var(--bor)">Party Name, Mobile, GST Number, Contact Person, City, State, Address, Type, Salesperson ID</div>
+    <div style="font-family:monospace;font-size:11px;color:var(--txt);background:var(--bg);padding:8px 12px;border-radius:6px;border:1px solid var(--bor)">Customer Name, Mobile, GST Number, Contact Person, City, State, Address, Type, Salesperson ID</div>
     <div style="font-size:11px;color:var(--mut);margin-top:8px">
       • <b>Type</b> options: Retailer / Dealer / Distributor / Architect / Builder / Direct<br>
       • <b>Salesperson ID</b> is optional — leave blank to assign to Admin<br>
       • First row can be a header, or start directly with data
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-out" style="font-size:12px" onclick="downloadPartySample()">⬇️ Sample CSV Download</button>
-      <button class="btn btn-out" style="font-size:12px" onclick="document.getElementById('bulkPartyFile').click()">📁 CSV/Excel File Upload</button>
+      <button class="btn btn-out" style="font-size:12px" onclick="downloadPartySample()">⬇️ Download Sample CSV</button>
+      <button class="btn btn-out" style="font-size:12px" onclick="document.getElementById('bulkPartyFile').click()">📁 Upload CSV/Excel File</button>
       <input type="file" id="bulkPartyFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleBulkPartyFile(event)">
     </div>
   </div>
   <div style="margin-bottom:10px">
     <label style="font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">📝 Or paste data directly (Excel copy-paste also works):</label>
-    <textarea id="bulkPartyText" rows="8" placeholder="Party Name, Mobile, GST, Contact, City, State, Address, Type, SP-ID&#10;Sharma Interiors, 9876543210, 22ABCDE1234F1Z5, Rahul Sharma, Mumbai, Maharashtra, Shop 12 Main Market, Retailer, ravi01&#10;Patel Tiles, 9765432100, 24XYZAB5678G2Z1, Kiran Patel, Ahmedabad, Gujarat, Opp Bus Stand, Dealer," style="font-size:12px;font-family:monospace;line-height:1.6"></textarea>
+    <textarea id="bulkPartyText" rows="8" placeholder="Customer Name, Mobile, GST, Contact, City, State, Address, Type, SP-ID&#10;Sharma Interiors, 9876543210, 22ABCDE1234F1Z5, Rahul Sharma, Mumbai, Maharashtra, Shop 12 Main Market, Retailer, ravi01&#10;Patel Tiles, 9765432100, 24XYZAB5678G2Z1, Kiran Patel, Ahmedabad, Gujarat, Opp Bus Stand, Dealer," style="font-size:12px;font-family:monospace;line-height:1.6"></textarea>
   </div>
   <div id="bulkPartyPreview" style="display:none">
     <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;color:var(--grn)">✅ Preview — Records to be imported:</div>
@@ -518,8 +634,8 @@ select option{background:var(--sur2)}
       • <b>Item Code</b> must be unique — duplicates will be skipped automatically
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-out" style="font-size:12px" onclick="downloadCatSample()">⬇️ Sample CSV Download</button>
-      <button class="btn btn-out" style="font-size:12px" onclick="document.getElementById('bulkCatFile').click()">📁 CSV/Excel File Upload</button>
+      <button class="btn btn-out" style="font-size:12px" onclick="downloadCatSample()">⬇️ Download Sample CSV</button>
+      <button class="btn btn-out" style="font-size:12px" onclick="document.getElementById('bulkCatFile').click()">📁 Upload CSV/Excel File</button>
       <input type="file" id="bulkCatFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleBulkCatFile(event)">
     </div>
   </div>
@@ -556,25 +672,25 @@ select option{background:var(--sur2)}
     <div class="fgr"><label>Date *</label><input type="date" id="exp-date"></div>
     <div class="fgr"><label>Payment Mode</label>
       <select id="exp-mode">
-        <option>GPay / UPI</option><option>Cash</option>
+        <option>UPI / GPay</option><option>Cash</option>
         <option>Credit Card</option><option>Debit Card</option><option>Net Banking</option><option>Other</option>
       </select>
     </div>
     <div class="fgr full"><label>Description / Remarks *</label>
       <input type="text" id="exp-desc" placeholder="e.g. Petrol — Office to Sharma Interiors visit">
     </div>
-    <div class="fgr full"><label>Party / Customer Visit (agar applicable ho)</label>
+    <div class="fgr full"><label>Party / Customer Visit (if applicable)</label>
       <select id="exp-party"><option value="">-- None / General --</option></select>
     </div>
   </div>
   <div style="margin-top:14px">
-    <label style="margin-bottom:8px;display:block;font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.4px">📎 Supporting Document (Bill / GPay Screenshot / Receipt)</label>
+    <label style="margin-bottom:8px;display:block;font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.4px">📎 Supporting Document (Bill / Payment Screenshot / Receipt)</label>
     <div class="upload-zone" id="expUploadZone">
       <input type="file" id="exp-files" accept="image/*,.pdf" multiple onchange="handleExpFiles(event)">
       <div id="expUploadPlaceholder">
         <div style="font-size:28px;margin-bottom:6px">📷</div>
         <div style="font-size:13px;font-weight:600;color:var(--txt)">Click or Drag &amp; Drop here</div>
-        <div style="font-size:11px;color:var(--mut);margin-top:3px">Bill photo, GPay screenshot, receipt — JPG, PNG, PDF</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:3px">Bill photo, payment screenshot, receipt — JPG, PNG, PDF</div>
       </div>
     </div>
     <div class="upload-preview" id="expFilePreview"></div>
@@ -594,6 +710,22 @@ select option{background:var(--sur2)}
   </div>
 </div></div>
 
+<!-- CUSTOMER LOCATION VIEW MODAL -->
+<div class="mov" id="mCustView"><div class="mo wide">
+  <div class="mo-h">
+    <div>
+      <div class="mo-t" id="cvMapTitle">Customer Location</div>
+      <div id="cvMapAddr" style="font-size:12px;color:var(--mut);margin-top:2px"></div>
+    </div>
+    <button class="xb" onclick="closeM('mCustView')">✕</button>
+  </div>
+  <div id="cvMapDiv" style="height:380px;width:100%;border-radius:10px;border:1px solid var(--bor);overflow:hidden"></div>
+  <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:14px">
+    <a id="cvMapGLink" href="#" target="_blank" class="btn btn-blue" style="text-decoration:none;display:flex;align-items:center;gap:6px">🗺️ Open in Google Maps</a>
+    <button class="btn btn-out" onclick="if(window._cvMap){window._cvMap.remove();window._cvMap=null;}closeM('mCustView')">Close</button>
+  </div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -603,7 +735,7 @@ select option{background:var(--sur2)}
 const C=['#f59e0b','#3b82f6','#10b981','#8b5cf6','#ef4444','#06b6d4','#f97316'];
 
 // ============================================================
-// SUPABASE CONFIG — Yahan apni keys daalo
+// SUPABASE CONFIG
 // ============================================================
 const SUPA_URL = 'https://isupdydflfvmriojcsoa.supabase.co';      // e.g. https://xyzabc.supabase.co
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzdXBkeWRmbGZ2bXJpb2pjc29hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NjExMDAsImV4cCI6MjA4OTMzNzEwMH0.SCWhvyL1VuoiDVlsiiJSho9k7L8Aunvf5BSL8PBhAdc'; // Settings > API > anon public
@@ -659,6 +791,8 @@ loadOfficeLocation();
 const MAX_USERS = 20;
 
 let spList=[];
+let dispatchList=[]; // Dispatch staff list (like spList but role=dispatch)
+let transportList=[]; // Transport/courier companies
 // Salespersons are loaded from Supabase or localStorage — add them via Admin > Salespersons
 
 let customers=[], orders=[], notifs=[], visits=[];
@@ -702,6 +836,8 @@ function lsSave(){
     localStorage.setItem('dcrm_splist',JSON.stringify(spList));
     localStorage.setItem('dcrm_notifs',JSON.stringify(notifs.slice(0,50)));
     localStorage.setItem('dcrm_expenses',JSON.stringify(expenses));
+    localStorage.setItem('dcrm_dispatch_staff',JSON.stringify(dispatchList));
+    localStorage.setItem('dcrm_transport',JSON.stringify(transportList));
   }catch(e){}
 }
 function lsLoad(){
@@ -712,6 +848,8 @@ function lsLoad(){
     const s=localStorage.getItem('dcrm_splist'); if(s){const ss=JSON.parse(s);if(ss.length)spList=ss;}
     const n=localStorage.getItem('dcrm_notifs'); if(n)notifs=JSON.parse(n);
     const ex=localStorage.getItem('dcrm_expenses'); if(ex)expenses=JSON.parse(ex);
+    const ds=localStorage.getItem('dcrm_dispatch_staff'); if(ds)dispatchList=JSON.parse(ds);
+    const tr=localStorage.getItem('dcrm_transport'); if(tr)transportList=JSON.parse(tr);
   }catch(e){}
 }
 
@@ -724,7 +862,7 @@ async function sbDelete(table,id){ const {error}=await sb.from(table).delete().e
 function saveData(){ lsSave(); /* Supabase writes happen via specific save functions below */ }
 
 // ---------- Push single record to Supabase ----------
-async function sbSaveCustomer(cust){ if(!supaReady)return; const row={id:String(cust.id),name:cust.name,gst:cust.gst||'',mob:cust.mob,contact:cust.con||'',city:cust.city||'',state:cust.state||'',addr:cust.addr||'',type:cust.type||'Retailer',sp_id:cust.spId||'admin',sp_name:cust.spName||'Admin'}; await sbUpsert('customers',row); }
+async function sbSaveCustomer(cust){ if(!supaReady)return; const row={id:String(cust.id),name:cust.name,gst:cust.gst||'',mob:cust.mob,contact:cust.con||'',city:cust.city||'',state:cust.state||'',addr:cust.addr||'',type:cust.type||'Retailer',sp_id:cust.spId||'admin',sp_name:cust.spName||'Admin',lat:cust.lat||null,lng:cust.lng||null}; await sbUpsert('customers',row); }
 async function sbSaveOrder(o){ if(!supaReady)return; const row={id:o.id,cust_id:String(o.cid),cust_name:o.custName,cust_mob:o.custMob,sp_id:o.spId,sp_name:o.spName,date:o.date,delivery_date:o.ddate||'',items:JSON.stringify(o.items),total:o.total,payment:o.pay,priority:o.pri,notes:o.notes||'',status:o.status,dispatch:o.disp?JSON.stringify(o.disp):null,created_at:o.createdAt}; await sbUpsert('orders',row); }
 async function sbSaveProduct(p){ if(!supaReady)return; const row={id:String(p.id),name:p.name,code:p.code,category:p.cat,price:p.price,unit:p.unit,sizes:p.sizes||'',hsn:p.hsn||'',description:p.desc||''}; await sbUpsert('products',row); }
 async function sbSaveExpense(e){ if(!supaReady)return; const row={id:String(e.id),sp_id:e.spId,sp_name:e.spName,category:e.cat,amount:e.amt,description:e.desc,date:e.date,mode:e.mode,party_id:e.partyId||null,party_name:e.partyName||'',files:JSON.stringify(e.files||[]),status:e.status,admin_note:e.adminNote||'',created_at:e.createdAt}; await sbUpsert('expenses',row); }
@@ -739,13 +877,27 @@ async function loadFromSupabase(){
       sbGet('customers'), sbGet('orders'), sbGet('products'),
       sbGet('salespersons'), sbGet('expenses')
     ]);
-    if(custs) customers=custs.map(r=>({id:r.id,name:r.name,gst:r.gst,mob:r.mob,con:r.contact,city:r.city,state:r.state,addr:r.addr,type:r.type,spId:r.sp_id,spName:r.sp_name}));
+    if(custs) customers=custs.map(r=>({id:r.id,name:r.name,gst:r.gst,mob:r.mob,con:r.contact,city:r.city,state:r.state,addr:r.addr,type:r.type,spId:r.sp_id,spName:r.sp_name,lat:r.lat||null,lng:r.lng||null}));
     if(ords)  orders=ords.map(r=>({id:r.id,cid:r.cust_id,custName:r.cust_name,custMob:r.cust_mob,spId:r.sp_id,spName:r.sp_name,date:r.date,ddate:r.delivery_date,items:JSON.parse(r.items||'[]'),total:r.total,pay:r.payment,pri:r.priority,notes:r.notes,status:r.status,disp:r.dispatch?JSON.parse(r.dispatch):null,createdAt:r.created_at}));
     if(prods&&prods.length) products=prods.map(r=>({id:r.id,name:r.name,code:r.code,cat:r.category,price:r.price,unit:r.unit,sizes:r.sizes,hsn:r.hsn,desc:r.description}));
     if(sps&&sps.length){
-      sps.forEach(r=>{ const idx=spList.findIndex(s=>s.id===r.id); if(idx>-1){spList[idx].name=r.name;spList[idx].pass=r.pass;spList[idx].mob=r.mob;spList[idx].zone=r.zone;spList[idx].status=r.status;spList[idx].orders=r.orders||0;} else {spList.push({id:r.id,name:r.name,pass:r.pass,mob:r.mob,zone:r.zone,status:r.status,orders:r.orders||0,checkedIn:false,cin:'—',visits:0,km:'0 km',pd:0,route:[]});} });
+      sps.forEach(r=>{
+        if(r.role==='dispatch'){
+          // Load dispatch staff into dispatchList
+          const didx=dispatchList.findIndex(d=>d.id===r.id);
+          const dobj={id:r.id,name:r.name,pass:r.pass,mob:r.mob||'',zone:r.zone||'Main Warehouse',status:r.status,role:'dispatch',joinDate:r.join_date||''};
+          if(didx>-1) dispatchList[didx]=dobj; else dispatchList.push(dobj);
+        } else {
+          // Load salesperson into spList
+          const idx=spList.findIndex(s=>s.id===r.id);
+          if(idx>-1){spList[idx].name=r.name;spList[idx].pass=r.pass;spList[idx].mob=r.mob;spList[idx].zone=r.zone;spList[idx].status=r.status;spList[idx].orders=r.orders||0;}
+          else {spList.push({id:r.id,name:r.name,pass:r.pass,mob:r.mob,zone:r.zone,status:r.status,orders:r.orders||0,checkedIn:false,cin:'—',visits:0,km:'0 km',pd:0,route:[]});}
+        }
+      });
     }
     if(exps) expenses=exps.map(r=>({id:r.id,spId:r.sp_id,spName:r.sp_name,cat:r.category,amt:r.amount,desc:r.description,date:r.date,mode:r.mode,partyId:r.party_id,partyName:r.party_name,files:JSON.parse(r.files||'[]'),status:r.status,adminNote:r.admin_note,createdAt:r.created_at}));
+    // Load transport from Supabase
+    try{ const {data:trData}=await sb.from('transport').select('*'); if(trData&&trData.length) transportList=trData.map(r=>({id:r.id,name:r.name,contact:r.contact||'',mob:r.mob||'',type:r.type||'Courier',city:r.city||'',notes:r.notes||'',status:r.status||'active'})); }catch(e){}
     lsSave();
     toast('☁️ Data loaded from Supabase!','var(--grn)');
     await loadOfficeFromSupabase();
@@ -790,6 +942,9 @@ function startRealtime(){
     .on('postgres_changes',{event:'*',schema:'public',table:'customers'},payload=>{
       handleRealtimeCustomer(payload);
     })
+    .on('postgres_changes',{event:'*',schema:'public',table:'salespersons'},payload=>{
+      handleRealtimeSP(payload);
+    })
     .subscribe(status=>{
       const el=document.getElementById('sbSyncStatus');
       if(status==='SUBSCRIBED'){
@@ -807,7 +962,7 @@ function handleRealtimeOrder(payload){
     const idx=orders.findIndex(x=>x.id===o.id);
     if(idx>-1) orders[idx]=o; else orders.unshift(o);
     if(payload.eventType==='INSERT'&&curUser&&curUser.role==='admin'&&o.spId!==curUser.id){
-      addNotif('order','🛒 New Order: '+o.id,'Party: '+o.custName+' | ₹'+o.total.toLocaleString('en-IN')+' | '+o.spName,o.id);
+      addNotif('order','🛒 New Order: '+o.id,'Customer: '+o.custName+' | ₹'+o.total.toLocaleString('en-IN')+' | '+o.spName,o.id);
       toast('🛒 New order from '+o.spName+' — '+o.custName,'var(--blue)');
     }
   }
@@ -834,12 +989,33 @@ function handleRealtimeCustomer(payload){
   if(!r) return;
   if(payload.eventType==='DELETE'){ customers=customers.filter(c=>c.id!==r.id); }
   else{
-    const c={id:r.id,name:r.name,gst:r.gst,mob:r.mob,con:r.contact,city:r.city,state:r.state,addr:r.addr,type:r.type,spId:r.sp_id,spName:r.sp_name};
+    const c={id:r.id,name:r.name,gst:r.gst,mob:r.mob,con:r.contact,city:r.city,state:r.state,addr:r.addr,type:r.type,spId:r.sp_id,spName:r.sp_name,lat:r.lat||null,lng:r.lng||null};
     const idx=customers.findIndex(x=>x.id===c.id);
     if(idx>-1) customers[idx]=c; else customers.push(c);
   }
   lsSave(); updS();
   if(['customers','dash'].includes(currentPage)) renderPage(currentPage);
+}
+function handleRealtimeSP(payload){
+  const r=payload.new||payload.old;
+  if(!r) return;
+  if(r.role==='dispatch'){
+    if(payload.eventType==='DELETE'){ dispatchList=dispatchList.filter(d=>d.id!==r.id); }
+    else{
+      const d={id:r.id,name:r.name,pass:r.pass,mob:r.mob||'',zone:r.zone||'',status:r.status,role:'dispatch'};
+      const idx=dispatchList.findIndex(x=>x.id===d.id);
+      if(idx>-1) dispatchList[idx]=d; else dispatchList.push(d);
+    }
+  } else {
+    if(payload.eventType==='DELETE'){ spList=spList.filter(s=>s.id!==r.id); }
+    else{
+      const idx=spList.findIndex(s=>s.id===r.id);
+      if(idx>-1){spList[idx].name=r.name;spList[idx].pass=r.pass;spList[idx].status=r.status;spList[idx].zone=r.zone;}
+      else{ spList.push({id:r.id,name:r.name,pass:r.pass,mob:r.mob||'',zone:r.zone||'',status:r.status,orders:0,checkedIn:false,cin:'—',visits:0,km:'0 km',pd:0,route:[]}); }
+    }
+  }
+  lsSave();
+  if(['salespersons','dispatchstaff','map','dash'].includes(currentPage)) renderPage(currentPage);
 }
 
 // ============================================================
@@ -855,20 +1031,66 @@ function tick(){
 }
 setInterval(tick,1000); tick();
 
-// GPS
-navigator.geolocation.getCurrentPosition(p=>{
-  myLat=p.coords.latitude; myLng=p.coords.longitude;
-  const d=document.getElementById('locDot'); if(d){d.className='loc-dot on';}
-  const t=document.getElementById('locTxt'); if(t)t.textContent='Location found: '+myLat.toFixed(4)+', '+myLng.toFixed(4);
-},()=>{
-  myLat=null; myLng=null;
-  const d=document.getElementById('locDot'); if(d){d.className='loc-dot';}
-  const t=document.getElementById('locTxt'); if(t)t.textContent='⚠️ Location unavailable — please allow location access';
-});
+// ============================================================
+// GPS — Persistent watch (keeps updating; works on mobile too)
+// ============================================================
+let gpsWatcher = null;
+
+function startGPS(){
+  if(!navigator.geolocation) return;
+  if(gpsWatcher !== null) return; // already running
+  const opts = { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 };
+  gpsWatcher = navigator.geolocation.watchPosition(
+    pos => {
+      myLat = pos.coords.latitude;
+      myLng = pos.coords.longitude;
+      const d = document.getElementById('locDot');
+      if(d) d.className = 'loc-dot on';
+      const t = document.getElementById('locTxt');
+      if(t) t.textContent = 'GPS: ' + myLat.toFixed(5) + ', ' + myLng.toFixed(5) +
+        ' (±' + Math.round(pos.coords.accuracy) + 'm)';
+      // Update live dot on My Location map if open
+      updateMyMapLiveDot();
+    },
+    err => {
+      // Don't null out myLat — keep last known if we had one
+      const d = document.getElementById('locDot');
+      if(d) d.className = 'loc-dot';
+      const t = document.getElementById('locTxt');
+      const msgs = {1:'Permission denied — please allow location access in browser settings',
+                    2:'GPS signal unavailable', 3:'GPS timed out — retrying...'};
+      if(t) t.textContent = '⚠️ ' + (msgs[err.code]||'Location unavailable');
+      // On permission denied, stop watching
+      if(err.code === 1){ navigator.geolocation.clearWatch(gpsWatcher); gpsWatcher = null; }
+    },
+    opts
+  );
+}
+
+// Start GPS as soon as page loads (desktop grants silently; mobile prompts on interaction)
+startGPS();
 
 // ============================================================
 // LOGIN / LOGOUT
 // ============================================================
+function resetAdminPassword(){
+  if(!confirm('Reset admin password to "admin123"?\n\nOnly use this if you forgot your password or the current one is not working.')){return;}
+  localStorage.removeItem('dcrm_admin_pass');
+  // Also clear from Supabase settings if connected
+  if(supaReady && sb){
+    try{ sb.from('settings').delete().eq('key','admin_pass'); }catch(e){}
+  }
+  const err=document.getElementById('loginErr');
+  err.style.display='block';
+  err.style.color='var(--grn)';
+  err.style.background='rgba(16,185,129,.1)';
+  err.style.borderColor='rgba(16,185,129,.3)';
+  err.textContent='✅ Password reset! Login with "admin123" now.';
+  document.getElementById('loginId').value='admin';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginPass').focus();
+}
+
 async function doLogin(){
   const id=document.getElementById('loginId').value.trim();
   const pass=document.getElementById('loginPass').value;
@@ -892,10 +1114,11 @@ async function doLogin(){
   }
 
   // Salesperson login — hash-aware check
+  // Try to load fresh data from Supabase if spList is empty (new device)
+  if(!spList.length&&!supaReady){ initSupabase(); await loadFromSupabase(); }
   const hashed=await hashPass(pass);
   const sp=spList.find(s=>s.id===id&&s.status==='active'&&(s.pass===hashed||(!isHashed(s.pass)&&s.pass===pass)));
   if(sp){
-    // Migrate plain text password to hash on first login
     if(!isHashed(sp.pass)){ sp.pass=hashed; sbSaveSP(sp); lsSave(); }
     curUser={id:sp.id,name:sp.name,role:'sales'};
     err.style.display='none';
@@ -905,6 +1128,17 @@ async function doLogin(){
     document.getElementById('psUserRole').textContent='Sales Executive — '+sp.zone;
     if(btn){btn.textContent='🚀 Login';btn.disabled=false;}
     return;
+  }
+  // Dispatch Staff login
+  const dp=dispatchList.find(d=>d.id===id&&d.status==='active'&&(d.pass===hashed||(!isHashed(d.pass)&&d.pass===pass)));
+  if(dp){
+    if(!isHashed(dp.pass)){ dp.pass=hashed; sbSaveSP(dp); lsSave(); }
+    curUser={id:dp.id,name:dp.name,role:'dispatch'};
+    err.style.display='none';
+    document.getElementById('loginScreen').style.display='none';
+    // Dispatch staff goes directly to app (no punch screen)
+    if(btn){btn.textContent='🚀 Login';btn.disabled=false;}
+    startApp(); return;
   }
   err.style.display='block';
   document.getElementById('loginPass').value='';
@@ -927,6 +1161,14 @@ function doLogout(){
   if(visitMap){visitMap.remove();visitMap=null;}
   if(offPreviewMap){offPreviewMap.remove();offPreviewMap=null;}
   dL=[]; tL=[]; spvL=[];
+  // Stop all GPS watchers
+  if(gpsWatcher !== null){navigator.geolocation.clearWatch(gpsWatcher);gpsWatcher=null;}
+  if(proximityWatcher){navigator.geolocation.clearWatch(proximityWatcher);proximityWatcher=null;}
+  tMapLiveDot = null;
+  if(proximityCircle){proximityCircle.remove();proximityCircle=null;}
+  // Clean up customer maps
+  if(window._cuMap){window._cuMap.remove();window._cuMap=null;window._cuMarker=null;}
+  if(window._cvMap){window._cvMap.remove();window._cvMap=null;}
   // Unsubscribe realtime channel
   if(realtimeChannel){sb.removeChannel(realtimeChannel);realtimeChannel=null;}
 }
@@ -935,16 +1177,49 @@ function doLogout(){
 // PUNCH IN / OUT
 // ============================================================
 function doPunchIn(){
-  pinTime=new Date();
+  pinTime = new Date();
+  const cinTime = pinTime.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+
+  // Mark SP as checked in
+  const sp = spList.find(s => s.id === curUser.id);
+  if(sp){
+    sp.checkedIn = true;
+    sp.cin = cinTime;
+    // Make sure route has start point at office/current location
+    const startLat = myLat || officeLat || 20.5937;
+    const startLng = myLng || officeLng || 78.9629;
+    if(!sp.route || !sp.route.length){
+      sp.route = [{lat:startLat, lng:startLng, lbl:officeName||'Office', t:'start', tm:cinTime}];
+    } else {
+      // Update start point coords if we now have GPS
+      if(myLat && sp.route[0]?.t === 'start'){
+        sp.route[0].lat = myLat; sp.route[0].lng = myLng; sp.route[0].tm = cinTime;
+      }
+    }
+    sbSaveSP(sp);
+    saveData();
+  }
+
   document.getElementById('punchScreen').classList.remove('visible');
   document.getElementById('punchbar').classList.add('show');
-  document.getElementById('pbName').textContent='✅ '+curUser.name+' — Punched In';
-  const locStr=myLat?myLat.toFixed(4)+', '+myLng.toFixed(4):'Location unavailable';
-  document.getElementById('pbSub').textContent='📍 '+locStr+' | 🕐 '+pinTime.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-  wInt=setInterval(()=>{
-    const d=Math.floor((new Date()-pinTime)/1000);
-    document.getElementById('wTimer').textContent=pad(Math.floor(d/3600))+':'+pad(Math.floor(d%3600/60))+':'+pad(d%60);
-  },1000);
+  document.getElementById('pbName').textContent = '✅ ' + curUser.name + ' — Punched In';
+  const locStr = myLat ? myLat.toFixed(4)+', '+myLng.toFixed(4) : 'Getting location...';
+  document.getElementById('pbSub').textContent = '📍 ' + locStr + ' | 🕐 ' + cinTime;
+
+  wInt = setInterval(() => {
+    const d = Math.floor((new Date() - pinTime) / 1000);
+    document.getElementById('wTimer').textContent =
+      pad(Math.floor(d/3600))+':'+pad(Math.floor(d%3600/60))+':'+pad(d%60);
+    // Keep pbSub updated with latest GPS
+    if(myLat){
+      const pb = document.getElementById('pbSub');
+      if(pb) pb.textContent = '📍 '+myLat.toFixed(4)+', '+myLng.toFixed(4)+' | 🕐 '+cinTime;
+    }
+  }, 1000);
+
+  // Re-request GPS on punch-in (critical for mobile — user gesture triggers permission dialog)
+  if(!myLat && gpsWatcher === null) startGPS();
+
   startApp();
   toast('✅ Punched In! Have a productive day.');
 }
@@ -952,13 +1227,17 @@ function doPunchIn(){
 function doPunchOut(){
   if(!confirm('Are you sure you want to Punch Out?'))return;
   clearInterval(wInt);
+  // Mark SP as checked out
+  const sp = spList.find(s => s.id === curUser?.id);
+  if(sp){ sp.checkedIn = false; sbSaveSP(sp); saveData(); }
   document.getElementById('punchbar').classList.remove('show');
   document.getElementById('app').classList.remove('show');
   document.getElementById('punchScreen').classList.add('visible');
   if(visitMap){visitMap.remove();visitMap=null;}
   if(tMap){tMap.remove();tMap=null;}
-  pinTime=null;
-  toast('👋 Punched Out successfully!','var(--acc)');
+  tMapLiveDot = null;
+  pinTime = null;
+  toast('👋 Punched Out. See you tomorrow!','var(--acc)');
 }
 
 function pad(n){return String(n).padStart(2,'0');}
@@ -969,10 +1248,10 @@ function pad(n){return String(n).padStart(2,'0');}
 function startApp(){
   document.getElementById('app').classList.add('show');
   document.getElementById('sbAv').textContent=curUser.name.charAt(0).toUpperCase();
-  document.getElementById('sbAv').style.background=curUser.role==='admin'?'var(--acc)':'var(--blue)';
+  document.getElementById('sbAv').style.background=curUser.role==='admin'?'var(--acc)':curUser.role==='dispatch'?'var(--pur)':'var(--blue)';
   document.getElementById('sbName').textContent=curUser.name;
-  document.getElementById('sbRole').textContent=curUser.role==='admin'?'Administrator':'Sales Executive';
-  document.getElementById('sbRole').className='sb-role '+(curUser.role==='admin'?'admin':'sales');
+  document.getElementById('sbRole').textContent=curUser.role==='admin'?'Administrator':curUser.role==='dispatch'?'Dispatch Staff':'Sales Executive';
+  document.getElementById('sbRole').className='sb-role '+curUser.role;
   buildNav();
   const today=new Date().toISOString().split('T')[0];
   ['o-date','d-date'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=today;});
@@ -988,6 +1267,8 @@ function buildNav(){
       <div class="ni act" onclick="go('dash',this)"><span>📊</span> Dashboard</div>
       <div class="ni" onclick="go('orders',this)"><span>🛒</span> Orders <span class="ni-b" id="pendBadge" style="display:none">0</span></div>
       <div class="ni" onclick="go('dispatch',this)"><span>🚚</span> Dispatch <span class="ni-b" id="dispBadge" style="display:none">0</span></div>
+      <div class="ni" onclick="go('dispatchstaff',this)"><span>👷</span> Dispatch Staff</div>
+      <div class="ni" onclick="go('transport',this)"><span>🚛</span> Transport List</div>
       <div class="ni" onclick="go('notifs',this)"><span>🔔</span> Notifications <span class="ni-b" id="notifBadge" style="display:none">0</span></div>
       <div class="ni" onclick="go('map',this)"><span>🗺️</span> Live Map</div>
       <div class="ni" onclick="go('customers',this)"><span>👥</span> Customers</div>
@@ -998,6 +1279,12 @@ function buildNav(){
       <div class="ni" onclick="go('spmap',this)"><span>🗺️</span> SP Visit Map</div>
       <div class="ni" onclick="go('expenses',this)"><span>💸</span> Expenses</div>
       <div class="ni" onclick="go('settings',this)"><span>⚙️</span> Settings</div>`;
+  } else if(curUser.role==='dispatch'){
+    nav.innerHTML=`
+      <div class="ni act" onclick="go('dash',this)"><span>📊</span> Dashboard</div>
+      <div class="ni" onclick="go('dispatch',this)"><span>🚚</span> Dispatch Orders <span class="ni-b" id="dispBadge" style="display:none">0</span></div>
+      <div class="ni" onclick="go('transport',this)"><span>🚛</span> Transport List</div>
+      <div class="ni" onclick="go('notifs',this)"><span>🔔</span> Notifications <span class="ni-b" id="notifBadge" style="display:none">0</span></div>`;
   } else {
     nav.innerHTML=`
       <div class="ni act" onclick="go('dash',this)"><span>📊</span> Dashboard</div>
@@ -1019,7 +1306,7 @@ function go(name,el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
   if(el) el.classList.add('act');
   else{const f=document.querySelector(`.ni[onclick*="'${name}'"]`); if(f)f.classList.add('act');}
-  const T={dash:'Dashboard',orders:'Order Management',dispatch:'Dispatch Management',notifs:'Notifications',map:'Live Agent Map',spmap:'Sales Person Map',customers:'Customers',products:'Products',salespersons:'Salespersons',reports:'Reports',salesreport:'Sales Report',expenses:'Expenses',myexpenses:'My Expenses',myorders:'My Orders',attendance:'My Attendance',mymap:'My Location',settings:'Settings',checkin:'Check-In Visit'};
+  const T={dash:'Dashboard',orders:'Order Management',dispatch:'Dispatch Management',notifs:'Notifications',map:'Live Agent Map',spmap:'Sales Person Map',customers:'Customers',products:'Products',salespersons:'Salespersons',reports:'Reports',salesreport:'Sales Report',expenses:'Expenses',myexpenses:'My Expenses',myorders:'My Orders',attendance:'My Attendance',mymap:'My Location',settings:'Settings',checkin:'Check-In Visit',transport:'Transport List',dispatchstaff:'Dispatch Staff',deliveryupdate:'Update Delivery'};
   document.getElementById('ptitle').textContent=T[name]||name;
   document.getElementById('ndrop').classList.remove('open');
   document.getElementById('pageContent').innerHTML='<div style="text-align:center;padding:40px;color:var(--mut)"><div style="font-size:28px;margin-bottom:10px">⏳</div>Loading...</div>';
@@ -1030,14 +1317,21 @@ function renderPage(name){
   const pc=document.getElementById('pageContent');
   const ta=document.getElementById('topActions');
   ta.innerHTML='';
-  // Clean up map instances that may be attached to the old page
+  // Clean up page-specific resources on navigation
+  // Clean up page-specific map instances on navigation
   if(offPreviewMap&&name!=='settings'){offPreviewMap.remove();offPreviewMap=null;}
-  if(visitMap&&name!=='checkin'){visitMap.remove();visitMap=null;visitMarker=null;}
+  if(visitMap&&name!=='checkin'){visitMap.remove();visitMap=null;visitMarker=null;if(typeof stopProximityTracking==='function')stopProximityTracking();}
   if(dMap&&name!=='dash'&&name!=='map'){dMap.remove();dMap=null;dL=[];}
   if(spvMap&&name!=='spmap'){spvMap.remove();spvMap=null;spvL=[];}
+  if(window._cuMap&&name!=='customers'){window._cuMap.remove();window._cuMap=null;window._cuMarker=null;}
   // Role guard — sales person cannot access admin-only pages
-  const adminOnly=['orders','dispatch','map','products','salespersons','reports','expenses','settings','salesreport','spmap'];
-  if(curUser.role==='sales'&&adminOnly.includes(name)){
+  const adminOnly=['orders','map','products','salespersons','reports','expenses','settings','salesreport','spmap'];
+  const dispatchAllowed=['dispatch','transport','notifs','dash'];
+  if(curUser.role==='dispatch'&&!dispatchAllowed.includes(name)){
+    pc.innerHTML=`<div class="es" style="padding:60px"><div style="font-size:48px;margin-bottom:16px">🔒</div><div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px">Access Denied</div><div style="font-size:14px;color:var(--mut)">This page is not accessible to Dispatch Staff.</div></div>`;
+    return;
+  }
+  if(curUser.role==='sales'&&(adminOnly.includes(name)||['dispatch','transport','dispatchstaff'].includes(name))){
     pc.innerHTML=`<div class="es" style="padding:60px">
       <div style="font-size:48px;margin-bottom:16px">🔒</div>
       <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px">Access Denied</div>
@@ -1049,7 +1343,9 @@ function renderPage(name){
     case 'dash': renderDash(pc,ta); break;
     case 'orders': renderOrdersPage(pc,ta); break;
     case 'myorders': renderMyOrdersPage(pc,ta); break;
-    case 'dispatch': renderDispatchPage(pc); break;
+    case 'dispatch': curUser.role==='dispatch'?renderDispatchStaffPage(pc,ta):renderDispatchPage(pc); break;
+    case 'transport': renderTransportPage(pc,ta); break;
+    case 'dispatchstaff': renderDispatchStaffMgmtPage(pc,ta); break;
     case 'notifs': renderNotifsPage(pc); break;
     case 'map': renderMapPage(pc); break;
     case 'mymap': renderMyMapPage(pc); break;
@@ -1073,6 +1369,50 @@ function renderPage(name){
 // DASHBOARD
 // ============================================================
 function renderDash(pc,ta){
+  if(curUser.role==='dispatch'){
+    renderDispatchStaffPage(pc,ta);
+    return;
+  }
+  if(curUser.role==='dispatch'){
+    const confirmed2=orders.filter(o=>o.status==='confirmed');
+    const dispatched2=orders.filter(o=>o.status==='dispatched');
+    const otd2=dispatched2.filter(o=>o.deliveryStatus==='out_for_delivery');
+    const delivered2=dispatched2.filter(o=>o.deliveryStatus==='delivered');
+    ta.innerHTML='';
+    pc.innerHTML=`
+    <div class="g4" style="margin-bottom:16px">
+      <div class="sc blue" style="cursor:pointer" onclick="go('dispatch')"><div class="sc-l">To Pack</div><div class="sc-v">${confirmed2.length}</div><div class="sc-s">Confirmed orders</div></div>
+      <div class="sc gold" style="cursor:pointer" onclick="go('dispatch')"><div class="sc-l">Packed</div><div class="sc-v">${dispatched2.filter(o=>o.deliveryStatus==='packed').length}</div><div class="sc-s">Ready to ship</div></div>
+      <div class="sc pur" style="cursor:pointer" onclick="go('dispatch')"><div class="sc-l">Out for Delivery</div><div class="sc-v">${otd2.length}</div><div class="sc-s">In transit</div></div>
+      <div class="sc grn" style="cursor:pointer" onclick="go('dispatch')"><div class="sc-l">Delivered Today</div><div class="sc-v">${delivered2.filter(o=>{const d=new Date(o.disp?.at||0);return d.toDateString()===new Date().toDateString();}).length}</div><div class="sc-s">Successfully delivered</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-h"><span class="card-t">📦 Recent Activity</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('dispatch')">View All</button></div>
+        ${[...confirmed2.slice(0,3),...dispatched2.slice(0,3)].map(o=>`
+        <div class="trow">
+          <div style="flex:1"><div style="font-weight:700;font-size:13px">${o.id} — ${o.custName}</div>
+          <div style="font-size:11px;color:var(--mut)">${o.disp?.courier||'Not dispatched'} | ₹${o.total.toLocaleString('en-IN')}</div></div>
+          ${o.status==='confirmed'?'<span class="badge b-blue">📦 Confirmed</span>':
+            o.deliveryStatus==='out_for_delivery'?'<span class="dsp-status dsp-otd">🚚 OTD</span>':
+            o.deliveryStatus==='delivered'?'<span class="dsp-status dsp-delivered">✅ Delivered</span>':
+            '<span class="badge b-grn">Dispatched</span>'}
+        </div>`).join('')||'<div class="es"><div class="ei">📦</div>No recent activity</div>'}
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="card-t">⚡ Quick Actions</span></div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <button class="btn btn-gold" style="width:100%;text-align:left;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:10px" onclick="go('dispatch')">
+            <span style="font-size:18px">🚚</span><span><b>Manage Dispatch Queue</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">${confirmed2.length} orders to pack</div></span>
+          </button>
+          <button class="btn btn-out" style="width:100%;text-align:left;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:10px;border-color:var(--pur);color:var(--pur)" onclick="go('transport')">
+            <span style="font-size:18px">🚛</span><span><b>View Transport List</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">${transportList.filter(t=>t.status==='active').length} active carriers</div></span>
+          </button>
+        </div>
+      </div>
+    </div>`;
+    return;
+  }
   if(curUser.role==='admin'){
     ta.innerHTML='<button class="btn btn-gold" onclick="openOrderModal()">+ New Order</button>';
     pc.innerHTML=`
@@ -1080,7 +1420,7 @@ function renderDash(pc,ta){
         <div class="sc gold"><div class="sc-l">Total Orders</div><div class="sc-v">${orders.length}</div><div class="sc-s">All time</div></div>
         <div class="sc gold"><div class="sc-l">Pending</div><div class="sc-v">${orders.filter(o=>o.status==='pending').length}</div><div class="sc-s">Needs confirmation</div></div>
         <div class="sc blue"><div class="sc-l">Confirmed</div><div class="sc-v">${orders.filter(o=>o.status==='confirmed').length}</div><div class="sc-s">Ready to dispatch</div></div>
-        <div class="sc grn"><div class="sc-l">Dispatched</div><div class="sc-v">${orders.filter(o=>o.status==='dispatched').length}</div><div class="sc-s">Sent to party</div></div>
+        <div class="sc grn"><div class="sc-l">Dispatched</div><div class="sc-v">${orders.filter(o=>o.status==='dispatched').length}</div><div class="sc-s">Sent to customer</div></div>
         <div class="sc pur"><div class="sc-l">Active Sales</div><div class="sc-v">${spList.filter(s=>s.checkedIn).length}</div><div class="sc-s">In field today</div></div>
       </div>
       <div class="g2" style="margin-bottom:16px">
@@ -1144,7 +1484,7 @@ function renderDash(pc,ta){
       <div class="sc grn" style="cursor:pointer" onclick="go('customers')">
         <div class="sc-l">My Customers</div>
         <div class="sc-v">${myCusts.length}</div>
-        <div class="sc-s">Assigned parties</div>
+        <div class="sc-s">Assigned customers</div>
       </div>
       <div class="sc pur" style="cursor:pointer" onclick="go('myexpenses')">
         <div class="sc-l">Expense Pending</div>
@@ -1207,7 +1547,7 @@ function renderDash(pc,ta){
             <span style="font-size:18px">🛒</span><span><b>Place New Order</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">Add an order for a party</div></span>
           </button>
           <button class="btn btn-out" style="width:100%;text-align:left;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:10px;border-color:var(--blue);color:var(--blue)" onclick="go('customers')">
-            <span style="font-size:18px">👥</span><span><b>View / Add Customers</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">${myCusts.length} assigned parties</div></span>
+            <span style="font-size:18px">👥</span><span><b>View / Add Customers</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">${myCusts.length} assigned customers</div></span>
           </button>
           <button class="btn btn-out" style="width:100%;text-align:left;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:10px;border-color:var(--grn);color:var(--grn)" onclick="openExpenseModal()">
             <span style="font-size:18px">💸</span><span><b>Add Expense</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">Attach bill, GPay screenshot or receipt</div></span>
@@ -1392,11 +1732,11 @@ function renderDispatchPage(pc){
         <div class="step active"><div class="sdot">⚙</div><div class="slbl">Processing</div></div>
         <div class="step"><div class="sdot">📦</div><div class="slbl">Packing</div></div>
         <div class="step"><div class="sdot">🚚</div><div class="slbl">Dispatch</div></div>
-        <div class="step"><div class="sdot">✅</div><div class="slbl">Party ACK</div></div>
+        <div class="step"><div class="sdot">✅</div><div class="slbl">Customer ACK</div></div>
       </div>
     </div>
-    ${ready.length?`<div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--acc)">⏳ Pending Dispatch (${ready.length})</div>`+ready.map(o=>`<div class="ocard confirmed"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">📱 ${o.custMob} | ₹${o.total.toLocaleString('en-IN')} | ${o.items.length} items | ${o.pay}</div></div><div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('en-IN')}</div></div><div class="oitems" style="margin-top:8px">${o.items.map(it=>`<div class="oitem"><span><b>${it.name}</b> (${it.code})</span><span>${it.qty} ${it.unit} | Size: ${it.size||'—'}</span></div>`).join('')}</div><div style="margin-top:10px"><button class="btn btn-grn" style="padding:6px 15px;font-size:13px" onclick="openDisp('${o.id}')">🚚 Dispatch &amp; Notify Party</button></div></div>`).join(''):''}
-    ${done.length?`<div class="divider"></div><div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--grn)">✅ Dispatched (${done.length})</div>`+done.map(o=>`<div class="ocard dispatched"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">🚚 ${o.disp?.courier||'—'} | Track: ${o.disp?.track||'—'} | ${o.disp?.date||'—'}</div><div style="font-size:12px;color:var(--grn);margin-top:2px">📱 Party notified ✅</div></div><span class="badge b-grn">✅ Dispatched</span></div><div style="margin-top:8px;display:flex;gap:7px"><button class="btn btn-pur" style="padding:5px 12px;font-size:12px" onclick="viewAck('${o.id}')">📨 View ACK</button><button class="btn btn-blue" style="padding:5px 12px;font-size:12px" onclick="generateInvoice('${o.id}')">🧾 Invoice PDF</button><button class="btn btn-out" style="padding:5px 12px;font-size:12px" onclick="resendAck('${o.id}')">🔄 Resend</button></div></div>`).join(''):''}
+    ${ready.length?`<div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--acc)">⏳ Pending Dispatch (${ready.length})</div>`+ready.map(o=>`<div class="ocard confirmed"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">📱 ${o.custMob} | ₹${o.total.toLocaleString('en-IN')} | ${o.items.length} items | ${o.pay}</div></div><div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('en-IN')}</div></div><div class="oitems" style="margin-top:8px">${o.items.map(it=>`<div class="oitem"><span><b>${it.name}</b> (${it.code})</span><span>${it.qty} ${it.unit} | Size: ${it.size||'—'}</span></div>`).join('')}</div><div style="margin-top:10px"><button class="btn btn-grn" style="padding:6px 15px;font-size:13px" onclick="openDisp('${o.id}')">🚚 Dispatch &amp; Notify Customer</button></div></div>`).join(''):''}
+    ${done.length?`<div class="divider"></div><div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--grn)">✅ Dispatched (${done.length})</div>`+done.map(o=>`<div class="ocard dispatched"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">🚛 ${o.disp?.courier||'—'} | Driver: ${o.disp?.driver||'—'} | Track: ${o.disp?.track||'—'} | ${o.disp?.date||'—'}</div><div style="font-size:12px;color:var(--grn);margin-top:2px">📱 Customer notified ✅</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${getDeliveryStatusBadge(o)}</div></div><div style="margin-top:8px;display:flex;gap:7px"><button class="btn btn-pur" style="padding:5px 12px;font-size:12px" onclick="viewAck('${o.id}')">📨 View ACK</button><button class="btn btn-blue" style="padding:5px 12px;font-size:12px" onclick="generateInvoice('${o.id}')">🧾 Invoice PDF</button><button class="btn btn-out" style="padding:5px 12px;font-size:12px" onclick="resendAck('${o.id}')">🔄 Resend</button></div></div>`).join(''):''}
     ${!ready.length&&!done.length?'<div class="es"><div class="ei">🚚</div>No orders ready for dispatch</div>':''}`;
 }
 
@@ -1407,6 +1747,12 @@ function openDisp(id){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('d-date').value=today;
   ['d-cour','d-track','d-del','d-driver','d-notes'].forEach(id=>document.getElementById(id).value='');
+  // Populate transport dropdown
+  const sel=document.getElementById('d-cour-sel');
+  sel.innerHTML='<option value="">-- Select transport --</option>'+
+    transportList.filter(t=>t.status==='active').map(t=>`<option value="${t.name}">${t.name} (${t.type})</option>`).join('')+
+    '<option value="__custom">+ Custom (type manually)</option>';
+  document.getElementById('d-delstatus').value='packed';
   updateWA(); openM('mDisp');
 }
 function updateWA(){
@@ -1432,7 +1778,7 @@ Courier: ${c}
 Tracking No: ${t}
 Expected Delivery: ${d}
 
-For any queries, please contact your sales executive.
+For any queries, please contact your sales representative.
 
 Thank you for your business!
 DecoCRM Pro Team`;
@@ -1441,14 +1787,16 @@ function doDispatch(){
   const o=orders.find(x=>x.id===curDispId); if(!o)return;
   const c=document.getElementById('d-cour').value.trim();
   if(!c){toast('Courier name is required!','var(--red)');return;}
-  o.status='dispatched';
-  o.disp={courier:c,track:document.getElementById('d-track').value,date:document.getElementById('d-date').value,del:document.getElementById('d-del').value,driver:document.getElementById('d-driver').value,notes:document.getElementById('d-notes').value,at:new Date().toLocaleString('en-IN'),waMsg:document.getElementById('waMsg').textContent};
+  const delStatus=document.getElementById('d-delstatus').value;
+  o.status=delStatus==='dispatched'?'dispatched':'dispatched'; // always mark dispatched when this modal is submitted
+  o.deliveryStatus=delStatus; // packed / out_for_delivery / dispatched
+  o.disp={courier:c,track:document.getElementById('d-track').value,date:document.getElementById('d-date').value,del:document.getElementById('d-del').value,driver:document.getElementById('d-driver').value,notes:document.getElementById('d-notes').value,at:new Date().toLocaleString('en-IN'),waMsg:document.getElementById('waMsg').textContent,deliveryStatus:delStatus,statusHistory:[{status:delStatus,by:curUser.name,at:new Date().toLocaleString('en-IN')}]};
   sbSaveOrder(o);
   closeM('mDisp');
   addNotif('dispatch','🚚 Dispatched: '+o.id,o.custName+' — Dispatched via '+c,o.id);
-  addNotif('ack','📱 Party ACK Sent: '+o.id,o.custName+' ('+o.custMob+') — WhatsApp notification sent',o.id);
-  toast('Order '+o.id+' dispatched! Party has been notified.');
-  setTimeout(()=>toast('📱 WhatsApp ACK sent to '+o.custName+' ('+o.custMob+')','var(--pur)'),2000);
+  addNotif('ack','📱 Customer ACK Sent: '+o.id,o.custName+' ('+o.custMob+') — WhatsApp notification sent',o.id);
+  toast('Order '+o.id+' dispatched! Customer has been notified.');
+  setTimeout(()=>toast('📱 WhatsApp notification sent to '+o.custName+' ('+o.custMob+')','var(--pur)'),2000);
   saveData(); go('dispatch'); updS(); updBadges();
 }
 function viewAck(id){
@@ -1459,7 +1807,7 @@ function viewAck(id){
       <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--grn);margin-bottom:10px">✅ Dispatch Acknowledgement</div>
       <div class="fg">
         <div><div style="font-size:10px;color:var(--mut);text-transform:uppercase">Order ID</div><div style="font-weight:700">${o.id}</div></div>
-        <div><div style="font-size:10px;color:var(--mut);text-transform:uppercase">Party Name</div><div style="font-weight:700">${o.custName}</div></div>
+        <div><div style="font-size:10px;color:var(--mut);text-transform:uppercase">Customer Name</div><div style="font-weight:700">${o.custName}</div></div>
         <div><div style="font-size:10px;color:var(--mut);text-transform:uppercase">Mobile</div><div style="font-weight:700">${o.custMob}</div></div>
         <div><div style="font-size:10px;color:var(--mut);text-transform:uppercase">Total Amount</div><div style="font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('en-IN')}</div></div>
         <div><div style="font-size:10px;color:var(--mut);text-transform:uppercase">Courier</div><div style="font-weight:700">${d.courier}</div></div>
@@ -1518,7 +1866,7 @@ function renderMyMapPage(pc){
     <div class="card" style="margin-bottom:15px">
       <div class="card-h">
         <span class="card-t">📍 My Location &amp; Route</span>
-        <span class="badge ${sp?.checkedIn?'b-grn':'b-red'}">${sp?.checkedIn?'● LIVE':'● Offline'}</span>
+        <span class="badge ${pinTime?'b-grn':'b-red'}">${pinTime?'● LIVE':'● Offline'}</span>
       </div>
       <div id="trackMap"></div>
     </div>
@@ -1576,24 +1924,60 @@ function showRoute2(idx){
   document.querySelectorAll('.pill').forEach((p,i)=>{p.className='pill'+(i===idx?' act':'');p.style.cssText=i===idx?`background:${col};color:#000;border-color:${col}`:''});
   if(dMap){const cur=s.route[s.route.length-1]; dMap.setView([cur.lat,cur.lng],14);}
 }
+let tMapLiveDot = null; // persistent live-dot marker on trackMap
+
 function initMyMap(sp){
-  const el=document.getElementById('trackMap'); if(!el)return;
-  if(tMap){tMap.invalidateSize();return;}
-  const defLat=myLat||20.5937, defLng=myLng||78.9629;
-  tMap=L.map('trackMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],myLat?13:5);
+  const el = document.getElementById('trackMap'); if(!el) return;
+  if(tMap){ tMap.invalidateSize(); updateMyMapLiveDot(); return; }
+
+  const defLat = myLat || officeLat || 20.5937;
+  const defLng = myLng || officeLng || 78.9629;
+  const zoom   = myLat ? 15 : 5;
+
+  tMap = L.map('trackMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],zoom);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CartoDB'}).addTo(tMap);
-  if(sp&&sp.route.length>0){
-    const col=C[0];
-    tL.push(L.polyline(sp.route.map(r=>[r.lat,r.lng]),{color:col,weight:4,opacity:.85}).addTo(tMap));
-    let mvn=0;
-    sp.route.forEach((r,i)=>{
+
+  const col = C[0];
+
+  // Draw saved route markers (visits etc.)
+  if(sp && sp.route && sp.route.length > 0){
+    const validPts = sp.route.filter(r => r.lat && r.lng && r.t !== 'cur');
+    if(validPts.length > 1)
+      tL.push(L.polyline(validPts.map(r=>[r.lat,r.lng]),{color:col,weight:3,opacity:.7,dashArray:'6,4'}).addTo(tMap));
+    let mvn = 0;
+    validPts.forEach(r => {
       let ic;
-      if(r.t==='cur'){ic=L.divIcon({html:`<div style="width:18px;height:18px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 0 0 6px ${col}44"></div>`,className:'',iconSize:[18,18],iconAnchor:[9,9]});}
-      else if(r.t==='start'){ic=L.divIcon({html:`<div style="background:#111827;color:#fff;padding:4px 9px;border-radius:8px;font-size:11px;font-weight:700;border:2px solid ${col};white-space:nowrap">🏠 Start</div>`,className:'',iconSize:[70,24],iconAnchor:[35,12]});}
-      else{mvn++;ic=L.divIcon({html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#000">${mvn}</div>`,className:'',iconSize:[28,28],iconAnchor:[14,14]});}
+      if(r.t === 'start'){
+        ic = L.divIcon({html:`<div style="background:#111827;color:#fff;padding:4px 9px;border-radius:8px;font-size:11px;font-weight:700;border:2px solid ${col};white-space:nowrap">🏠 ${r.lbl||'Office'}</div>`,className:'',iconSize:[90,24],iconAnchor:[45,12]});
+      } else {
+        mvn++;
+        ic = L.divIcon({html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#000">${mvn}</div>`,className:'',iconSize:[28,28],iconAnchor:[14,14]});
+      }
       tL.push(L.marker([r.lat,r.lng],{icon:ic}).addTo(tMap).bindPopup(`<b>${r.lbl}</b><br><small>🕐 ${r.tm}${r.t==='visit'?' • Visit #'+mvn:''}</small>`));
     });
-    if(sp.route.length>1)tMap.fitBounds(L.latLngBounds(sp.route.map(r=>[r.lat,r.lng])),{padding:[40,40]});
+  }
+
+  // Place live dot immediately if GPS is available
+  updateMyMapLiveDot();
+}
+
+// Called by GPS watcher every time position updates — keeps live dot current
+function updateMyMapLiveDot(){
+  if(!tMap || !myLat || !myLng) return;
+  const col = C[0];
+  const liveDotHtml = `<div style="position:relative;width:22px;height:22px">
+    <div style="position:absolute;inset:0;border-radius:50%;background:${col};opacity:.25;animation:blink 1.5s infinite"></div>
+    <div style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 0 4px rgba(59,130,246,.4)"></div>
+  </div>`;
+  const liveIcon = L.divIcon({html:liveDotHtml, className:'', iconSize:[22,22], iconAnchor:[11,11]});
+
+  if(tMapLiveDot){
+    tMapLiveDot.setLatLng([myLat, myLng]);
+  } else {
+    tMapLiveDot = L.marker([myLat, myLng], {icon:liveIcon, zIndexOffset:1000})
+      .addTo(tMap)
+      .bindPopup('📍 Your current location');
+    tMap.setView([myLat, myLng], 15);
   }
 }
 
@@ -1614,28 +1998,42 @@ function renderCustCards(list){
   if(!list.length)return`<div class="es" style="grid-column:1/-1"><div class="ei">👥</div>No customers found. Click "+ Add Customer" to add.</div>`;
   return list.map(c=>`<div class="cc">
     <div class="cav">${c.name.charAt(0)}</div>
-    <div style="flex:1">
+    <div style="flex:1;min-width:0">
       <div style="font-weight:700;font-size:14px">${c.name}</div>
       ${c.gst?`<div style="font-size:11px;color:var(--mut);font-family:monospace">GST: ${c.gst}</div>`:''}
       <div style="font-size:11px;color:var(--mut);margin-top:4px">📱 ${c.mob}${c.city?` &nbsp;📍 ${c.city}`:''}</div>
       ${c.con?`<div style="font-size:11px;color:var(--mut)">👤 ${c.con}</div>`:''}
-      <span class="badge b-gold" style="margin-top:5px">${c.type}</span>
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:5px">
+        <span class="badge b-gold">${c.type}</span>
+        ${c.lat&&c.lng
+          ? `<span class="badge b-grn" style="cursor:pointer" onclick="viewCustMap(${c.id})" title="Location dekho">📍 Map</span>`
+          : `<span class="badge" style="background:rgba(100,116,139,.1);color:var(--mut);font-size:10px">No location</span>`}
+      </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+      ${c.lat&&c.lng?`<button class="btn btn-blue" style="padding:4px 10px;font-size:11px" onclick="viewCustMap(${c.id})" title="Location dekho">📍</button>`:''}
       <button class="btn btn-gold" style="padding:4px 10px;font-size:11px" onclick="quickOrder(${c.id})">🛒</button>
+      ${c.lat?`<button class="btn btn-blue" style="padding:4px 10px;font-size:11px" onclick="viewCustMap(${c.id})">📍</button>`:''}
       <button class="btn btn-red" style="padding:4px 10px;font-size:11px" onclick="delCust(${c.id})">🗑</button>
     </div>
   </div>`).join('');
 }
 function saveCust(){
   const n=document.getElementById('cu-name').value.trim(), m=document.getElementById('cu-mob').value.trim();
-  if(!n||!m){toast('Name and mobile are required!','var(--red)');return;}
+  if(!n||!m){toast('Name and mobile number are required!','var(--red)');return;}
   const spId=document.getElementById('cu-sp').value||curUser.id;
   const sp=spList.find(s=>s.id===spId)||{name:'Admin'};
-  const newCust={id:Date.now(),name:n,gst:document.getElementById('cu-gst').value.trim().toUpperCase(),mob:m,con:document.getElementById('cu-con').value.trim(),city:document.getElementById('cu-city').value.trim(),state:document.getElementById('cu-state').value.trim(),addr:document.getElementById('cu-addr').value.trim(),type:document.getElementById('cu-type').value,spId,spName:sp.name};
+  const lat=parseFloat(document.getElementById('cu-lat').value)||null;
+  const lng=parseFloat(document.getElementById('cu-lng').value)||null;
+  const newCust={id:Date.now(),name:n,gst:document.getElementById('cu-gst').value.trim().toUpperCase(),mob:m,con:document.getElementById('cu-con').value.trim(),city:document.getElementById('cu-city').value.trim(),state:document.getElementById('cu-state').value.trim(),addr:document.getElementById('cu-addr').value.trim(),type:document.getElementById('cu-type').value,spId,spName:sp.name,lat,lng};
   customers.push(newCust); sbSaveCustomer(newCust);
+  if(window._cuMap){window._cuMap.remove();window._cuMap=null;window._cuMarker=null;}
   closeM('mCust'); ['cu-name','cu-gst','cu-mob','cu-con','cu-city','cu-state','cu-addr'].forEach(id=>document.getElementById(id).value='');
-  toast('Customer added: '+n); saveData(); updS(); go('customers');
+  const mp=document.getElementById('cuMapDiv');if(mp)mp.style.display='none';
+  const ph=document.getElementById('cuMapPlaceholder');if(ph)ph.style.display='flex';
+  const ls=document.getElementById('cu-lat');if(ls)ls.value='';
+  const lgs=document.getElementById('cu-lng');if(lgs)lgs.value='';
+  toast('✅ Customer added: '+n); saveData(); updS(); go('customers');
 }
 function delCust(id){if(!confirm('Delete this customer?'))return;customers=customers.filter(c=>c.id!==id);sbDelete('customers',String(id));saveData();updS();toast('Customer deleted','var(--red)');go('customers');}
 function updCustSP(){
@@ -1718,7 +2116,7 @@ function parseBulkParty(){
   if(!parsed.length){toast('No valid records found — Name and Mobile are required!','var(--red)');return;}
   window._bulkPartyParsed=parsed;
   const tbl=document.getElementById('bulkPartyTable');
-  tbl.innerHTML=`<table><thead><tr><th>#</th><th>Party Name</th><th>Mobile</th><th>GST</th><th>City</th><th>Type</th><th>Salesperson</th><th>Status</th></tr></thead><tbody>`+
+  tbl.innerHTML=`<table><thead><tr><th>#</th><th>Customer Name</th><th>Mobile</th><th>GST</th><th>City</th><th>Type</th><th>Salesperson</th><th>Status</th></tr></thead><tbody>`+
     parsed.map((r,i)=>{
       const dup=customers.find(c=>c.mob===r.mob);
       const sp=spList.find(s=>s.id===r.spId);
@@ -1795,7 +2193,7 @@ function triggerDownload(content,filename){
 }
 function downloadPartySample(){
   const rows=[
-    'Party Name,Mobile,GST Number,Contact Person,City,State,Address,Type,Salesperson ID',
+    'Customer Name,Mobile,GST Number,Contact Person,City,State,Address,Type,Salesperson ID',
     'Sharma Interiors,9876543210,22ABCDE1234F1Z5,Rahul Sharma,Mumbai,Maharashtra,Shop 12 Main Market,Retailer,ravi01',
     'Patel Tiles & More,9765432100,24XYZAB5678G2Z1,Kiran Patel,Ahmedabad,Gujarat,Opp Bus Stand Ring Road,Dealer,priya02',
     'Gupta Decor House,9654321098,,Suresh Gupta,Delhi,Delhi,F-45 Lajpat Nagar,Distributor,',
@@ -1961,7 +2359,7 @@ async function saveSP(){
   if(!n||!id){toast('Name and User ID are required!','var(--red)');return;}
   if(editSPIdx===-1&&!passRaw){toast('Password is required for new users!','var(--red)');return;}
   if(id==='admin'){toast('"admin" ID is reserved!','var(--red)');return;}
-  if(spList.length>=MAX_USERS&&editSPIdx===-1){toast('Maximum '+MAX_USERS+' users reached!','var(--red)');return;}
+  if(spList.length>=MAX_USERS&&editSPIdx===-1){toast('Maximum '+MAX_USERS+' users limit reached!','var(--red)');return;}
   const dup=spList.findIndex(s=>s.id===id);
   if(dup!==-1&&dup!==editSPIdx){toast('This User ID already exists!','var(--red)');return;}
   // Hash the password — keep existing if blank on edit
@@ -2292,7 +2690,7 @@ function downloadSalesExcel(){
   XLSX.utils.book_append_sheet(wb,wsVisits,'Visit Route');
 
   // ── Sheet 3: Orders ─────────────────────────────────────────
-  const orderRows=[['Order ID','Salesperson','Party Name','Mobile','Date','Delivery Date','Items','Total (₹)','Payment','Priority','Status']];
+  const orderRows=[['Order ID','Salesperson','Customer Name','Mobile','Date','Delivery Date','Items','Total (₹)','Payment','Priority','Status']];
   selSPs.forEach(sp=>{
     const myOrds=orders.filter(o=>o.spId===sp.id&&(!from||o.date>=from)&&(!to||o.date<=to));
     myOrds.forEach(o=>{
@@ -2309,7 +2707,7 @@ function downloadSalesExcel(){
   XLSX.utils.book_append_sheet(wb,wsOrders,'Orders');
 
   // ── Sheet 4: Order Items (detailed) ────────────────────────
-  const itemRows=[['Order ID','Salesperson','Party Name','Date','Product Name','Item Code','Size','Qty','Unit','Rate (₹)','Amount (₹)','Order Status']];
+  const itemRows=[['Order ID','Salesperson','Customer Name','Date','Product Name','Item Code','Size','Qty','Unit','Rate (₹)','Amount (₹)','Order Status']];
   selSPs.forEach(sp=>{
     const myOrds=orders.filter(o=>o.spId===sp.id&&(!from||o.date>=from)&&(!to||o.date<=to));
     myOrds.forEach(o=>{
@@ -2496,11 +2894,11 @@ function calcTotal(){
 function updOrderCust(){
   const s=document.getElementById('o-cust'); if(!s)return;
   const list=curUser.role==='admin'?customers:customers.filter(c=>c.spId===curUser.id);
-  s.innerHTML='<option value="">-- Select Party --</option>'+list.map(c=>`<option value="${c.id}">${c.name} — ${c.mob}</option>`).join('');
+  s.innerHTML='<option value="">-- Select Customer --</option>'+list.map(c=>`<option value="${c.id}">${c.name} — ${c.mob}</option>`).join('');
 }
 function saveOrder(){
   const cid=document.getElementById('o-cust').value;
-  if(!cid){toast('Please select a party!','var(--red)');return;}
+  if(!cid){toast('Please select a customer!','var(--red)');return;}
   const cu=customers.find(c=>c.id==cid);
   const items=[];
   for(let i=1;i<=iCnt;i++){
@@ -2517,7 +2915,7 @@ function saveOrder(){
   const total=items.reduce((s,i)=>s+i.total,0);
   const sp=spList.find(s=>s.id===curUser.id)||{name:'Admin'};
   const o={
-    id:'ORD-'+String(Date.now()).slice(-5),
+    id:'ORD-'+Date.now().toString(36).toUpperCase().slice(-6),
     cid, custName:cu.name, custMob:cu.mob,
     spId:curUser.id, spName:sp.name||'Admin',
     date:document.getElementById('o-date').value,
@@ -2533,7 +2931,7 @@ function saveOrder(){
   orders.unshift(o); sbSaveOrder(o);
   if(curUser.role==='sales'){const s=spList.find(x=>x.id===curUser.id); if(s)s.orders++;}
   closeM('mOrder');
-  addNotif('order','🛒 New Order: '+o.id,'Party: '+cu.name+' | ₹'+total.toLocaleString('en-IN')+' | '+o.spName,o.id);
+  addNotif('order','🛒 New Order: '+o.id,'Customer: '+cu.name+' | ₹'+total.toLocaleString('en-IN')+' | '+o.spName,o.id);
   toast('Order submitted! Team notified. ID: '+o.id);
   saveData(); updS(); updBadges();
   setTimeout(()=>toast('📤 Admin team notified about Order '+o.id,'var(--pur)'),2000);
@@ -2823,7 +3221,21 @@ function reviewExp(id,status){
 // HELPERS
 // ============================================================
 function openM(id){document.getElementById(id).classList.add('op');}
-function closeM(id){document.getElementById(id).classList.remove('op');}
+function closeM(id){
+  document.getElementById(id).classList.remove('op');
+  if(id==='mCust'){
+    // Reset map
+    if(window._cuMap){window._cuMap.remove();window._cuMap=null;window._cuMarker=null;}
+    const md=document.getElementById('cuMapDiv'); if(md)md.style.display='none';
+    const ph=document.getElementById('cuMapPlaceholder'); if(ph)ph.style.display='flex';
+    const gs=document.getElementById('cuGeoStatus'); if(gs)gs.textContent='';
+    const la=document.getElementById('cu-lat'); if(la)la.value='';
+    const ln=document.getElementById('cu-lng'); if(ln)ln.value='';
+  }
+  if(id==='mCustView'){
+    if(window._cvMap){window._cvMap.remove();window._cvMap=null;}
+  }
+}
 // Modal backdrop close — delegated so dynamically added modals also work
 document.addEventListener('click',e=>{
   if(e.target.classList.contains('mov')) e.target.classList.remove('op');
@@ -3007,14 +3419,18 @@ async function changeAdminPass(){
 // CHECK-IN VISIT PAGE (Salesperson)
 // ============================================================
 let visitMap=null, visitMarker=null, checkinLat=null, checkinLng=null;
+let proximityWatcher=null, proximityCircle=null, proximityAlertShown=false;
+let lastProximityState=null; // 'inside' | 'outside' | null
 
 function renderCheckinPage(pc,ta){
   const sp=spList.find(s=>s.id===curUser.id)||{};
   const myCusts=customers.filter(c=>c.spId===curUser.id);
-  const today=new Date().toISOString().split('T')[0];
   const todayVisits=(sp.route||[]).filter(r=>r.t==='visit');
 
   pc.innerHTML=`
+  <!-- Proximity Alert Banner (hidden by default) -->
+  <div id="proximityBanner" style="display:none;border-radius:12px;padding:14px 18px;margin-bottom:14px;display:none;align-items:center;gap:12px;font-weight:700;font-size:14px;animation:fadeUp .3s ease"></div>
+
   <div class="g2" style="gap:16px">
     <div style="display:flex;flex-direction:column;gap:14px">
 
@@ -3022,12 +3438,34 @@ function renderCheckinPage(pc,ta){
       <div class="card">
         <div class="card-h"><span class="card-t">📍 Log a Customer Visit</span></div>
         <div style="display:flex;flex-direction:column;gap:12px">
-          <div class="fgr"><label>Customer / Party *</label>
-            <select id="ci-cust">
+          <div class="fgr"><label>Customer *</label>
+            <select id="ci-cust" onchange="onCustomerSelect(this.value)">
               <option value="">-- Select Customer --</option>
-              ${myCusts.map(c=>`<option value="${c.id}">${c.name} — ${c.city||c.mob}</option>`).join('')}
+              ${myCusts.map(c=>`<option value="${c.id}" data-lat="${c.lat||''}" data-lng="${c.lng||''}">${c.name}${c.lat?' 📍':' (no location)'} — ${c.city||c.mob}</option>`).join('')}
             </select>
           </div>
+
+          <!-- Proximity Status Card -->
+          <div id="proximityCard" style="display:none;border-radius:10px;padding:12px 14px;border:2px solid var(--bor);transition:all .3s">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div id="proximityIcon" style="font-size:24px">📍</div>
+                <div>
+                  <div id="proximityTitle" style="font-weight:700;font-size:13px">Checking distance...</div>
+                  <div id="proximityDist" style="font-size:12px;color:var(--mut);margin-top:2px"></div>
+                </div>
+              </div>
+              <div id="proximityBadge" class="badge">—</div>
+            </div>
+            <!-- Distance bar -->
+            <div style="margin-top:10px;background:var(--sur2);border-radius:20px;height:8px;overflow:hidden">
+              <div id="proximityBar" style="height:100%;border-radius:20px;transition:width .5s ease,background .3s;width:0%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut);margin-top:4px">
+              <span>0m</span><span style="color:var(--grn);font-weight:700">✓ 100m</span><span>500m+</span>
+            </div>
+          </div>
+
           <div class="fgr"><label>Visit Purpose</label>
             <select id="ci-purpose">
               <option>Order Collection</option>
@@ -3043,7 +3481,7 @@ function renderCheckinPage(pc,ta){
           </div>
           <div style="background:var(--sur2);border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:10px">
             <div class="loc-dot" id="ciLocDot"></div>
-            <span id="ciLocTxt" style="font-size:12px;color:var(--mut)">Detecting location...</span>
+            <span id="ciLocTxt" style="font-size:12px;color:var(--mut)">Detecting GPS location...</span>
           </div>
           <button class="btn btn-gold" onclick="logVisitCheckin()" style="padding:12px">📍 Log Visit Check-In</button>
         </div>
@@ -3060,6 +3498,7 @@ function renderCheckinPage(pc,ta){
           <div style="flex:1">
             <div style="font-weight:700;font-size:13px">${v.lbl}</div>
             <div style="font-size:11px;color:var(--mut)">${v.purpose||'Visit'} &nbsp;|&nbsp; 🕐 ${v.tm}</div>
+            ${v.dist!=null?`<div style="font-size:11px;color:${v.dist<=100?'var(--grn)':'var(--acc)'};margin-top:1px">${v.dist<=100?'✅ Within 100m':'⚠️ '+Math.round(v.dist)+'m away'} when checked in</div>`:''}
             ${v.notes?`<div style="font-size:11px;color:var(--mut);margin-top:2px">💬 ${v.notes}</div>`:''}
           </div>
         </div>`).join(''):'<div class="es" style="padding:16px"><div class="ei">📍</div>No visits logged today</div>'}
@@ -3067,45 +3506,262 @@ function renderCheckinPage(pc,ta){
 
     </div>
 
-    <!-- Visit Map -->
+    <!-- Visit Map with proximity circle -->
     <div class="card">
-      <div class="card-h"><span class="card-t">🗺️ My Live Location</span>
-        <span class="badge ${sp.checkedIn?'b-grn':'b-red'}">${sp.checkedIn?'● Active':'● Offline'}</span>
+      <div class="card-h">
+        <span class="card-t">🗺️ Live Location & Proximity</span>
+        <span class="badge ${pinTime?'b-grn':'b-red'}">${pinTime?'● Active':'● Offline'}</span>
       </div>
-      <div id="visitMap" style="height:420px;border-radius:10px;border:1px solid var(--bor)"></div>
-      <div style="font-size:11px;color:var(--mut);margin-top:8px;text-align:center">📍 Blue dot = your current location &nbsp;|&nbsp; Numbered circles = visited customers</div>
+      <div id="visitMap" style="height:460px;border-radius:10px;border:1px solid var(--bor)"></div>
+      <div style="margin-top:10px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--mut)">
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;vertical-align:middle"></span> Your location</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(16,185,129,.6);border:2px solid var(--grn);vertical-align:middle"></span> 100m zone (green = in range)</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--acc);vertical-align:middle"></span> Customer pin</span>
+      </div>
     </div>
   </div>`;
 
-  // Init GPS and map
+  // Start GPS + map
   setTimeout(()=>{
     initVisitMap(sp);
-    navigator.geolocation.getCurrentPosition(p=>{
-      checkinLat=p.coords.latitude; checkinLng=p.coords.longitude;
-      document.getElementById('ciLocDot').className='loc-dot on';
-      document.getElementById('ciLocTxt').textContent='GPS ready: '+checkinLat.toFixed(4)+', '+checkinLng.toFixed(4);
-      updateVisitMapPosition();
-    },()=>{
-      checkinLat=myLat; checkinLng=myLng;
-      document.getElementById('ciLocDot').className='loc-dot';
-      document.getElementById('ciLocTxt').textContent='⚠️ GPS unavailable — using last known location';
+    startProximityTracking();
+  }, 80);
+}
+
+// ── GPS Proximity Tracking ──────────────────────────────────
+function startProximityTracking(){
+  // Stop any existing watcher
+  if(proximityWatcher){ navigator.geolocation.clearWatch(proximityWatcher); proximityWatcher=null; }
+
+  if(!navigator.geolocation){
+    document.getElementById('ciLocTxt').textContent='⚠️ GPS not supported on this device';
+    return;
+  }
+
+  const opts = { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 };
+
+  proximityWatcher = navigator.geolocation.watchPosition(pos => {
+    checkinLat = pos.coords.latitude;
+    checkinLng  = pos.coords.longitude;
+    const acc   = Math.round(pos.coords.accuracy);
+
+    document.getElementById('ciLocDot').className = 'loc-dot on';
+    document.getElementById('ciLocTxt').textContent =
+      'GPS: ' + checkinLat.toFixed(5) + ', ' + checkinLng.toFixed(5) + '  (±' + acc + 'm)';
+
+    // Update blue dot on map
+    updateVisitMapPosition();
+
+    // Check proximity if a customer is selected
+    const sel = document.getElementById('ci-cust');
+    if(sel && sel.value) checkProximity(sel.value);
+
+  }, err => {
+    document.getElementById('ciLocDot').className = 'loc-dot';
+    document.getElementById('ciLocTxt').textContent = '⚠️ GPS unavailable — ' + err.message;
+  }, opts);
+}
+
+function stopProximityTracking(){
+  if(proximityWatcher){ navigator.geolocation.clearWatch(proximityWatcher); proximityWatcher=null; }
+  proximityAlertShown = false;
+  lastProximityState  = null;
+}
+
+// Called when salesperson selects a customer in dropdown
+function onCustomerSelect(custId){
+  // Remove old proximity circle
+  if(proximityCircle){ proximityCircle.remove(); proximityCircle=null; }
+  proximityAlertShown = false;
+  lastProximityState  = null;
+
+  const card = document.getElementById('proximityCard');
+
+  if(!custId){ card.style.display='none'; hideBanner(); return; }
+
+  const cust = customers.find(c=>c.id==custId);
+  if(!cust || !cust.lat || !cust.lng){
+    card.style.display='block';
+    card.style.borderColor='var(--mut)';
+    document.getElementById('proximityIcon').textContent='📌';
+    document.getElementById('proximityTitle').textContent='No saved location for this customer';
+    document.getElementById('proximityDist').textContent='Add address with map to enable proximity check';
+    document.getElementById('proximityBadge').className='badge';
+    document.getElementById('proximityBadge').textContent='No location';
+    document.getElementById('proximityBar').style.width='0%';
+    return;
+  }
+
+  // Draw customer pin + 100m circle on map
+  if(visitMap){
+    if(proximityCircle){ proximityCircle.remove(); proximityCircle=null; }
+
+    // Customer amber pin
+    const pin = L.divIcon({
+      className:'',
+      html:`<div style="width:34px;height:34px;background:var(--acc);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);font-size:14px">🏪</span></div>`,
+      iconSize:[34,34], iconAnchor:[17,34], popupAnchor:[0,-36]
     });
-  },80);
+    if(visitMap._custPin) visitMap._custPin.remove();
+    visitMap._custPin = L.marker([cust.lat, cust.lng], {icon: pin})
+      .addTo(visitMap)
+      .bindPopup(`<b>${cust.name}</b><br><small>${cust.type} • ${cust.mob}</small>${cust.addr?'<br><small>'+cust.addr+'</small>':''}`);
+
+    // 100m green circle (will update color based on proximity)
+    proximityCircle = L.circle([cust.lat, cust.lng], {
+      radius: 100,
+      color: '#10b981',
+      fillColor: '#10b981',
+      fillOpacity: 0.12,
+      weight: 2,
+      dashArray: '6,4'
+    }).addTo(visitMap);
+
+    visitMap.setView([cust.lat, cust.lng], 17);
+  }
+
+  card.style.display = 'block';
+  // Immediately check if we already have location
+  if(checkinLat && checkinLng) checkProximity(custId);
+}
+
+// Calculate distance in metres between two lat/lng points (Haversine)
+function getDistanceM(lat1, lng1, lat2, lng2){
+  const R = 6371000;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function checkProximity(custId){
+  if(!checkinLat || !checkinLng) return;
+  const cust = customers.find(c=>c.id==custId);
+  if(!cust || !cust.lat || !cust.lng) return;
+
+  const dist   = getDistanceM(checkinLat, checkinLng, cust.lat, cust.lng);
+  const inside = dist <= 100;
+  const card   = document.getElementById('proximityCard');
+  const title  = document.getElementById('proximityTitle');
+  const distEl = document.getElementById('proximityDist');
+  const badge  = document.getElementById('proximityBadge');
+  const icon   = document.getElementById('proximityIcon');
+  const bar    = document.getElementById('proximityBar');
+
+  // Bar width: 0m=0%, 100m=50%, 500m=100%
+  const barPct = Math.min(100, (dist / 500) * 100);
+
+  if(inside){
+    // ✅ Within 100m — GREEN
+    card.style.borderColor = 'var(--grn)';
+    card.style.background  = 'rgba(16,185,129,.05)';
+    icon.textContent  = '✅';
+    title.textContent = 'You are within 100m of ' + cust.name;
+    distEl.textContent= '📏 Distance: ' + Math.round(dist) + 'm — Ready to check in!';
+    badge.className   = 'badge b-grn';
+    badge.textContent = '✅ In Range';
+    bar.style.width      = barPct + '%';
+    bar.style.background = 'var(--grn)';
+
+    // Update circle to green
+    if(proximityCircle){ proximityCircle.setStyle({color:'#10b981',fillColor:'#10b981',fillOpacity:0.18}); }
+
+    // Show green banner
+    showBanner('inside', cust.name, Math.round(dist));
+
+    // Alert only once when entering zone
+    if(lastProximityState === 'outside'){
+      playProximitySound('enter');
+      toast('✅ You are now within 100m of ' + cust.name + '!', 'var(--grn)');
+    }
+    lastProximityState = 'inside';
+
+  } else {
+    // ⚠️ Outside 100m — RED/AMBER
+    const color = dist < 300 ? 'var(--acc)' : 'var(--red)';
+    card.style.borderColor = color;
+    card.style.background  = dist < 300 ? 'rgba(245,158,11,.05)' : 'rgba(239,68,68,.05)';
+    icon.textContent  = dist < 300 ? '🔶' : '🚨';
+    title.textContent = 'You are ' + Math.round(dist) + 'm away from ' + cust.name;
+    distEl.textContent= dist < 300
+      ? '📏 Getting closer — ' + Math.round(dist-100) + 'm more to enter check-in zone'
+      : '📏 Too far — move closer to the customer location';
+    badge.className   = dist < 300 ? 'badge b-gold' : 'badge b-red';
+    badge.textContent = dist < 300 ? '⚠️ Almost There' : '🚨 Too Far';
+    bar.style.width      = barPct + '%';
+    bar.style.background = dist < 300 ? 'var(--acc)' : 'var(--red)';
+
+    // Update circle to red when outside
+    if(proximityCircle){ proximityCircle.setStyle({color:'var(--red)',fillColor:'#ef4444',fillOpacity:0.08}); }
+
+    // Show alert banner
+    showBanner('outside', cust.name, Math.round(dist));
+
+    // Alert only once when moving away
+    if(lastProximityState === 'inside'){
+      playProximitySound('exit');
+      toast('⚠️ You moved away from ' + cust.name + ' (' + Math.round(dist) + 'm)', 'var(--red)');
+    }
+    lastProximityState = 'outside';
+  }
+}
+
+function showBanner(state, custName, dist){
+  const banner = document.getElementById('proximityBanner');
+  if(!banner) return;
+  if(state === 'inside'){
+    banner.style.display    = 'flex';
+    banner.style.background = 'rgba(16,185,129,.12)';
+    banner.style.border     = '1px solid rgba(16,185,129,.4)';
+    banner.style.color      = 'var(--grn)';
+    banner.innerHTML = `<span style="font-size:20px">✅</span><span>You are within 100m of <b>${custName}</b> (${dist}m) — You can log this visit!</span>`;
+  } else {
+    banner.style.display    = 'flex';
+    banner.style.background = 'rgba(239,68,68,.1)';
+    banner.style.border     = '1px solid rgba(239,68,68,.35)';
+    banner.style.color      = 'var(--red)';
+    banner.innerHTML = `<span style="font-size:20px">🚨</span><span>You are <b>${dist}m</b> away from <b>${custName}</b> — Move closer (within 100m) to check in</span>`;
+  }
+}
+function hideBanner(){
+  const banner=document.getElementById('proximityBanner');
+  if(banner) banner.style.display='none';
+}
+
+// Simple audio beep using Web Audio API
+function playProximitySound(type){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain= ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type      = 'sine';
+    osc.frequency.value = type==='enter' ? 880 : 440;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc.start(); osc.stop(ctx.currentTime + 0.6);
+  }catch(e){}
 }
 
 function initVisitMap(sp){
   const el=document.getElementById('visitMap'); if(!el)return;
   if(visitMap){visitMap.remove();visitMap=null;}
   const defLat=officeLat||myLat||20.5937, defLng=officeLng||myLng||78.9629;
-  visitMap=L.map('visitMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],13);
+  visitMap=L.map('visitMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],15);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(visitMap);
   if(sp&&sp.route&&sp.route.length>1){
     const col='#f59e0b';
     L.polyline(sp.route.map(r=>[r.lat,r.lng]),{color:col,weight:3,opacity:.8}).addTo(visitMap);
     let vn=0;
     sp.route.forEach(r=>{
-      if(r.t==='start'){L.marker([r.lat,r.lng],{icon:L.divIcon({html:`<div style="background:#111827;border:2px solid ${col};border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;color:${col};white-space:nowrap">🏢 ${officeName}</div>`,className:'',iconSize:[120,24],iconAnchor:[60,12]})}).addTo(visitMap);}
-      else if(r.t==='visit'){vn++;L.marker([r.lat,r.lng],{icon:L.divIcon({html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#000">${vn}</div>`,className:'',iconSize:[28,28],iconAnchor:[14,14]})}).bindPopup(`<b>${r.lbl}</b><br><small>${r.purpose||''} • ${r.tm}</small>`).addTo(visitMap);}
+      if(r.t==='start'){
+        L.marker([r.lat,r.lng],{icon:L.divIcon({html:`<div style="background:#111827;border:2px solid ${col};border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;color:${col};white-space:nowrap">🏢 ${officeName}</div>`,className:'',iconSize:[120,24],iconAnchor:[60,12]})}).addTo(visitMap);
+      } else if(r.t==='visit'){
+        vn++;
+        L.marker([r.lat,r.lng],{icon:L.divIcon({html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#000">${vn}</div>`,className:'',iconSize:[28,28],iconAnchor:[14,14]})}).bindPopup(`<b>${r.lbl}</b><br><small>${r.purpose||''} • ${r.tm}</small>`).addTo(visitMap);
+      }
     });
   }
 }
@@ -3113,8 +3769,13 @@ function initVisitMap(sp){
 function updateVisitMapPosition(){
   if(!visitMap||!checkinLat||!checkinLng) return;
   if(visitMarker) visitMarker.remove();
-  visitMarker=L.marker([checkinLat,checkinLng],{icon:L.divIcon({html:'<div style="width:16px;height:16px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(59,130,246,.3)"></div>',className:'',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(visitMap);
-  visitMap.setView([checkinLat,checkinLng],15);
+  visitMarker=L.marker([checkinLat,checkinLng],{
+    icon:L.divIcon({
+      html:'<div style="width:18px;height:18px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 0 8px rgba(59,130,246,.25)"></div>',
+      className:'',iconSize:[18,18],iconAnchor:[9,9]
+    }),
+    zIndexOffset:1000
+  }).addTo(visitMap).bindPopup('📍 Your location');
 }
 
 async function logVisitCheckin(){
@@ -3122,36 +3783,47 @@ async function logVisitCheckin(){
   if(!cid){toast('Please select a customer!','var(--red)');return;}
   const cust=customers.find(c=>c.id==cid);
   if(!cust){toast('Customer not found!','var(--red)');return;}
+
+  const lat=checkinLat||(officeLat||20.5937);
+  const lng=checkinLng||(officeLng||78.9629);
+
+  // Calculate actual distance for the record
+  let dist=null;
+  if(cust.lat && cust.lng && checkinLat && checkinLng){
+    dist = Math.round(getDistanceM(checkinLat, checkinLng, cust.lat, cust.lng));
+  }
+
   const purpose=document.getElementById('ci-purpose').value;
   const notes=document.getElementById('ci-notes').value.trim();
   const now=new Date();
   const timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-  const lat=checkinLat||(officeLat||20.5937);
-  const lng=checkinLng||(officeLng||78.9629);
 
-  // Add to SP route
   const sp=spList.find(s=>s.id===curUser.id);
   if(sp){
     sp.visits=(sp.visits||0)+1;
-    sp.route.push({lat,lng,lbl:cust.name,t:'visit',tm:timeStr,purpose,notes});
-    // Update current location marker
+    sp.route.push({lat,lng,lbl:cust.name,t:'visit',tm:timeStr,purpose,notes,dist});
     const curIdx=sp.route.findIndex(r=>r.t==='cur');
     if(curIdx>-1) sp.route[curIdx]={lat,lng,lbl:'Current Location',t:'cur',tm:'Now'};
     else sp.route.push({lat,lng,lbl:'Current Location',t:'cur',tm:'Now'});
-    // Save to Supabase
     await sbSaveSP(sp);
-    // Add notification for admin
-    addNotif('visit','📍 Visit: '+cust.name,curUser.name+' checked in at '+cust.name+' ('+purpose+') — '+timeStr,null);
-    if(supaReady) await sb.from('visits').upsert({id:String(Date.now()),sp_id:curUser.id,sp_name:curUser.name,cust_id:String(cid),cust_name:cust.name,purpose,notes,lat,lng,time:timeStr,date:now.toISOString().split('T')[0],created_at:now.toISOString()},{onConflict:'id'});
+    const distNote = dist!=null ? (dist<=100?' (within 100m ✅)':' ('+dist+'m away ⚠️)') : '';
+    addNotif('visit','📍 Visit: '+cust.name, curUser.name+' checked in at '+cust.name+' ('+purpose+')'+distNote+' — '+timeStr, null);
+    if(supaReady) await sb.from('visits').upsert({id:String(Date.now()),sp_id:curUser.id,sp_name:curUser.name,cust_id:String(cid),cust_name:cust.name,purpose,notes,lat,lng,dist,time:timeStr,date:now.toISOString().split('T')[0],created_at:now.toISOString()},{onConflict:'id'});
   }
 
   document.getElementById('ci-notes').value='';
   document.getElementById('ci-cust').value='';
-  toast('✅ Visit logged: '+cust.name+' at '+timeStr,'var(--grn)');
+  hideBanner();
+  if(proximityCircle){proximityCircle.remove();proximityCircle=null;}
+  if(visitMap&&visitMap._custPin){visitMap._custPin.remove();visitMap._custPin=null;}
+  lastProximityState=null;
+
+  const distMsg = dist!=null ? (dist<=100?' — ✅ Within 100m':' — ⚠️ '+dist+'m away') : '';
+  toast('✅ Visit logged: '+cust.name+' at '+timeStr+distMsg,'var(--grn)');
   saveData();
-  // Refresh map and visit list
   renderCheckinPage(document.getElementById('pageContent'),document.getElementById('topActions'));
 }
+
 
 // ============================================================
 // PDF INVOICE GENERATOR
@@ -3244,6 +3916,400 @@ function generateInvoice(orderId){
   if(!w) toast('Please allow popups to open the invoice','var(--acc)');
   setTimeout(()=>URL.revokeObjectURL(url),10000);
   toast('📄 Invoice opened — use Print to save as PDF','var(--grn)');
+}
+
+// ============================================================
+// CUSTOMER MAP PREVIEW (Geocoding + Leaflet)
+// ============================================================
+let _cuGeoTimer = null;
+
+function debounceCustGeo(){
+  clearTimeout(_cuGeoTimer);
+  const city = document.getElementById('cu-city')?.value.trim() || '';
+  const addr = document.getElementById('cu-addr')?.value.trim() || '';
+  const query = [addr, city].filter(Boolean).join(', ');
+  if(query.length < 3) return;
+  _cuGeoTimer = setTimeout(() => geocodeCust(query), 800);
+}
+
+async function geocodeCust(query){
+  const status = document.getElementById('cuGeoStatus');
+  if(status) status.innerHTML = '<span style="color:var(--acc)">⏳ Locating...</span>';
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', India')}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    const data = await res.json();
+    if(data && data.length > 0){
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
+      document.getElementById('cu-lat').value = lat;
+      document.getElementById('cu-lng').value = lng;
+      if(status) status.innerHTML = '<span style="color:var(--grn)">✅ Location found</span>';
+      showCuMapPreview(lat, lng, data[0].display_name);
+    } else {
+      if(status) status.innerHTML = '<span style="color:var(--mut)">❌ Location not found — please check city name</span>';
+    }
+  } catch(e) {
+    if(status) status.innerHTML = '<span style="color:var(--mut)">Network error — check internet connection</span>';
+  }
+}
+
+function showCuMapPreview(lat, lng, label){
+  const mapDiv = document.getElementById('cuMapDiv');
+  const placeholder = document.getElementById('cuMapPlaceholder');
+  if(!mapDiv) return;
+  placeholder.style.display = 'none';
+  mapDiv.style.display = 'block';
+
+  if(window._cuMap){
+    window._cuMap.setView([lat, lng], 15);
+    if(window._cuMarker){
+      window._cuMarker.setLatLng([lat, lng]);
+      window._cuMarker.setPopupContent(`<b>${document.getElementById('cu-name').value||'Customer'}</b><br><small>${label}</small>`);
+    }
+  } else {
+    window._cuMap = L.map('cuMapDiv', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 15);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(window._cuMap);
+
+    const pin = L.divIcon({
+      className: '',
+      html: `<div style="width:34px;height:34px;background:var(--acc);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);font-size:15px">📍</span></div>`,
+      iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -36]
+    });
+
+    window._cuMarker = L.marker([lat, lng], { icon: pin, draggable: true })
+      .addTo(window._cuMap)
+      .bindPopup(`<b>${document.getElementById('cu-name').value||'Customer'}</b><br><small>${label}</small>`)
+      .openPopup();
+
+    window._cuMarker.on('dragend', function(e){
+      const pos = e.target.getLatLng();
+      document.getElementById('cu-lat').value = pos.lat.toFixed(6);
+      document.getElementById('cu-lng').value = pos.lng.toFixed(6);
+      document.getElementById('cuGeoStatus').innerHTML = '<span style="color:var(--blue)">📌 Position manually adjusted</span>';
+    });
+  }
+  setTimeout(() => { if(window._cuMap) window._cuMap.invalidateSize(); }, 200);
+}
+
+// View saved customer location from customer card
+function viewCustMap(id){
+  const c = customers.find(x => x.id === id);
+  if(!c || !c.lat || !c.lng){ toast('No location saved for this customer — add address with map to enable','var(--acc)'); return; }
+  document.getElementById('cvMapTitle').textContent = c.name;
+  document.getElementById('cvMapAddr').textContent = [c.addr, c.city, c.state].filter(Boolean).join(', ') || '—';
+  document.getElementById('cvMapGLink').href = `https://www.google.com/maps?q=${c.lat},${c.lng}`;
+  openM('mCustView');
+  setTimeout(() => {
+    const el = document.getElementById('cvMapDiv');
+    if(window._cvMap){ window._cvMap.remove(); window._cvMap = null; }
+    window._cvMap = L.map(el, { zoomControl: true }).setView([c.lat, c.lng], 16);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(window._cvMap);
+    const pin = L.divIcon({
+      className: '',
+      html: `<div style="position:relative"><div style="width:46px;height:46px;background:rgba(245,158,11,.25);border-radius:50%;position:absolute;top:-23px;left:-23px;animation:cuPulse 1.8s ease-out infinite"></div><div style="width:32px;height:32px;background:var(--acc);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;position:absolute;top:-28px;left:-14px"><span style="transform:rotate(45deg);font-size:14px">🏪</span></div></div>`,
+      iconSize: [0, 0], popupAnchor: [0, -30]
+    });
+    L.marker([c.lat, c.lng], { icon: pin })
+      .addTo(window._cvMap)
+      .bindPopup(`<div style="min-width:160px"><b style="font-size:13px">${c.name}</b><br><span style="font-size:11px;color:#888">${c.type} • ${c.mob}</span>${c.addr?`<br><span style="font-size:11px">${c.addr}</span>`:''}</div>`)
+      .openPopup();
+    if(!document.getElementById('cuPulseStyle')){
+      const st = document.createElement('style');
+      st.id = 'cuPulseStyle';
+      st.textContent = '@keyframes cuPulse{0%{transform:scale(.4);opacity:.9}100%{transform:scale(2.6);opacity:0}}';
+      document.head.appendChild(st);
+    }
+    window._cvMap.invalidateSize();
+  }, 150);
+}
+
+// ============================================================
+// TRANSPORT LIST PAGE
+// ============================================================
+function renderTransportPage(pc,ta){
+  const canEdit = curUser.role==='admin';
+  if(canEdit) ta.innerHTML=`<button class="btn btn-gold" onclick="openAddTransport()">+ Add Transport</button>`;
+  const active=transportList.filter(t=>t.status==='active');
+  const inactive=transportList.filter(t=>t.status==='inactive');
+  pc.innerHTML=`
+    <div class="g3" style="margin-bottom:16px">
+      <div class="sc pur"><div class="sc-l">Total Transport</div><div class="sc-v">${transportList.length}</div><div class="sc-s">Companies listed</div></div>
+      <div class="sc grn"><div class="sc-l">Active</div><div class="sc-v">${active.length}</div><div class="sc-s">Available</div></div>
+      <div class="sc gold"><div class="sc-l">Used This Month</div><div class="sc-v">${orders.filter(o=>o.disp&&o.disp.courier).length}</div><div class="sc-s">Orders dispatched</div></div>
+    </div>
+    ${!transportList.length?`<div class="es"><div class="ei">🚛</div>No transport added yet. Contact admin.</div>`:`
+    <div class="card">
+      <div class="card-h"><span class="card-t">🚛 Transport / Courier List</span></div>
+      <div class="tw"><table><thead><tr><th>Company Name</th><th>Type</th><th>Contact</th><th>Mobile</th><th>City</th><th>Notes</th><th>Status</th>${canEdit?'<th>Action</th>':''}</tr></thead>
+      <tbody>${transportList.map((t,i)=>`<tr>
+        <td><b>${t.name}</b></td>
+        <td><span class="badge b-pur2">${t.type}</span></td>
+        <td>${t.contact||'—'}</td>
+        <td>${t.mob?`<a href="tel:${t.mob}" style="color:var(--blue)">${t.mob}</a>`:'—'}</td>
+        <td>${t.city||'—'}</td>
+        <td style="font-size:11px;color:var(--mut);max-width:180px">${t.notes||'—'}</td>
+        <td><span class="badge ${t.status==='active'?'b-grn':'b-red'}">${t.status==='active'?'Active':'Inactive'}</span></td>
+        ${canEdit?`<td>
+          <button class="btn btn-out" style="padding:3px 9px;font-size:11px" onclick="editTransport(${i})">✏️</button>
+          <button class="btn btn-red" style="padding:3px 9px;font-size:11px;margin-left:3px" onclick="deleteTransport(${i})">🗑</button>
+        </td>`:''}
+      </tr>`).join('')}</tbody></table></div>
+    </div>`}`;
+}
+
+function openAddTransport(){
+  window._editTrIdx=-1;
+  document.getElementById('mTransportTitle').textContent='🚛 Add Transport';
+  ['tr-name','tr-contact','tr-mob','tr-city','tr-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tr-type').selectedIndex=0;
+  document.getElementById('tr-status').value='active';
+  openM('mTransport');
+}
+function editTransport(i){
+  const t=transportList[i]; window._editTrIdx=i;
+  document.getElementById('mTransportTitle').textContent='✏️ Edit: '+t.name;
+  document.getElementById('tr-name').value=t.name;
+  document.getElementById('tr-contact').value=t.contact||'';
+  document.getElementById('tr-mob').value=t.mob||'';
+  document.getElementById('tr-type').value=t.type;
+  document.getElementById('tr-city').value=t.city||'';
+  document.getElementById('tr-notes').value=t.notes||'';
+  document.getElementById('tr-status').value=t.status;
+  openM('mTransport');
+}
+function saveTransport(){
+  const n=document.getElementById('tr-name').value.trim();
+  if(!n){toast('Transport name is required!','var(--red)');return;}
+  const data={id:'TR-'+Date.now(),name:n,contact:document.getElementById('tr-contact').value.trim(),mob:document.getElementById('tr-mob').value.trim(),type:document.getElementById('tr-type').value,city:document.getElementById('tr-city').value.trim(),notes:document.getElementById('tr-notes').value.trim(),status:document.getElementById('tr-status').value};
+  if(window._editTrIdx>-1){data.id=transportList[window._editTrIdx].id;transportList[window._editTrIdx]=data;toast('Transport updated: '+n);}
+  else{transportList.push(data);toast('✅ Transport added: '+n);}
+  lsSave(); if(supaReady) sbUpsert('transport',{id:data.id,name:data.name,contact:data.contact||'',mob:data.mob||'',type:data.type,city:data.city||'',notes:data.notes||'',status:data.status});
+  closeM('mTransport'); go('transport');
+}
+function deleteTransport(i){if(!confirm('Delete this transport?'))return;const t=transportList[i];transportList.splice(i,1);lsSave();if(t&&supaReady)sbDelete('transport',t.id);toast('Transport deleted','var(--red)');go('transport');}
+
+function fillTransportField(){
+  const sel=document.getElementById('d-cour-sel');
+  const val=sel.value;
+  if(val&&val!=='__custom'){
+    document.getElementById('d-cour').value=val;
+    const tr=transportList.find(t=>t.name===val);
+    if(tr&&tr.mob){document.getElementById('d-driver').placeholder='Driver: '+tr.contact+' | '+tr.mob;}
+    updateWA();
+  } else if(val==='__custom'){
+    document.getElementById('d-cour').value='';
+    document.getElementById('d-cour').focus();
+  }
+}
+
+// ============================================================
+// DISPATCH STAFF MANAGEMENT (Admin page)
+// ============================================================
+function renderDispatchStaffMgmtPage(pc,ta){
+  ta.innerHTML=`<button class="btn btn-gold" onclick="openAddDispatchStaff()">+ Add Dispatch Staff</button>`;
+  pc.innerHTML=`
+    <div class="g2" style="margin-bottom:16px">
+      <div class="sc pur"><div class="sc-l">Dispatch Staff</div><div class="sc-v">${dispatchList.length}</div><div class="sc-s">Total accounts</div></div>
+      <div class="sc grn"><div class="sc-l">Active</div><div class="sc-v">${dispatchList.filter(d=>d.status==='active').length}</div><div class="sc-s">Can login</div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="card-t">🚚 Dispatch Staff Accounts</span></div>
+      ${!dispatchList.length?'<div class="es">No dispatch staff added. Click + Add.</div>':`
+      <div class="tw"><table><thead><tr><th>Name</th><th>User ID</th><th>Mobile</th><th>Warehouse</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${dispatchList.map((d,i)=>`<tr>
+        <td><div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:7px;background:var(--pur)22;border:1px solid var(--pur);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--pur)">${d.name.charAt(0)}</div>
+          <b>${d.name}</b></div></td>
+        <td style="font-family:monospace;color:var(--pur)">${d.id}</td>
+        <td>📱 ${d.mob||'—'}</td>
+        <td>${d.zone||'—'}</td>
+        <td><span class="badge ${d.status==='active'?'b-grn':'b-red'}">${d.status==='active'?'Active':'Inactive'}</span></td>
+        <td>
+          <button class="btn btn-out" style="padding:3px 9px;font-size:11px" onclick="editDispatchStaff(${i})">✏️ Edit</button>
+          <button class="btn btn-red" style="padding:3px 9px;font-size:11px;margin-left:3px" onclick="deleteDispatchStaff(${i})">🗑</button>
+        </td>
+      </tr>`).join('')}</tbody></table></div>`}
+    </div>`;
+}
+let _editDspIdx=-1;
+function openAddDispatchStaff(){
+  _editDspIdx=-1;
+  document.getElementById('mDispStaffTitle').textContent='➕ Add Dispatch Staff';
+  ['dsp-name','dsp-id','dsp-pass','dsp-mob','dsp-zone'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('dsp-id').disabled=false;
+  document.getElementById('dsp-status').value='active';
+  openM('mDispStaff');
+}
+function editDispatchStaff(i){
+  const d=dispatchList[i]; _editDspIdx=i;
+  document.getElementById('mDispStaffTitle').textContent='✏️ Edit: '+d.name;
+  document.getElementById('dsp-name').value=d.name;
+  document.getElementById('dsp-id').value=d.id;
+  document.getElementById('dsp-id').disabled=true;
+  document.getElementById('dsp-pass').value='';
+  document.getElementById('dsp-pass').placeholder='Leave blank to keep current password';
+  document.getElementById('dsp-mob').value=d.mob||'';
+  document.getElementById('dsp-zone').value=d.zone||'';
+  document.getElementById('dsp-status').value=d.status;
+  openM('mDispStaff');
+}
+async function saveDispatchStaff(){
+  const n=document.getElementById('dsp-name').value.trim();
+  const id=document.getElementById('dsp-id').value.trim();
+  const passRaw=document.getElementById('dsp-pass').value.trim();
+  if(!n||!id){toast('Name and User ID are required!','var(--red)');return;}
+  if(_editDspIdx===-1&&!passRaw){toast('Password is required for new staff!','var(--red)');return;}
+  if(id==='admin'){toast('"admin" ID is reserved!','var(--red)');return;}
+  const dupSP=spList.find(s=>s.id===id);
+  const dupDP=dispatchList.findIndex(d=>d.id===id);
+  if(dupSP){toast('This ID is already used by a salesperson!','var(--red)');return;}
+  if(dupDP!==-1&&dupDP!==_editDspIdx){toast('This User ID already exists!','var(--red)');return;}
+  let pass;
+  if(passRaw){ pass=await hashPass(passRaw); }
+  else if(_editDspIdx>-1){ pass=dispatchList[_editDspIdx].pass; }
+  else { toast('Password is required!','var(--red)'); return; }
+  const data={id,name:n,pass,role:'dispatch',mob:document.getElementById('dsp-mob').value.trim(),zone:document.getElementById('dsp-zone').value.trim()||'Main Warehouse',status:document.getElementById('dsp-status').value,joinDate:new Date().toISOString().split('T')[0]};
+  if(_editDspIdx===-1){dispatchList.push(data);toast('✅ Dispatch staff added: '+n);}
+  else{dispatchList[_editDspIdx]=data;toast('Updated: '+n);}
+  document.getElementById('dsp-id').disabled=false;
+  // Save to Supabase (reuse salespersons table with role='dispatch')
+  if(supaReady) await sbUpsert('salespersons',{id:data.id,name:data.name,pass:data.pass,mob:data.mob||'',zone:data.zone||'Main Warehouse',status:data.status,join_date:data.joinDate||'',orders:0,role:'dispatch'});
+  lsSave(); closeM('mDispStaff'); go('dispatchstaff');
+}
+function deleteDispatchStaff(i){
+  if(!confirm('Delete this dispatch staff?'))return;
+  const d=dispatchList[i];
+  dispatchList.splice(i,1);
+  if(d&&supaReady) sbDelete('salespersons',d.id);
+  lsSave(); toast('Dispatch staff deleted','var(--red)'); go('dispatchstaff');
+}
+
+// ============================================================
+// DISPATCH STAFF PAGE (what dispatch user sees)
+// ============================================================
+function renderDispatchStaffPage(pc,ta){
+  ta.innerHTML='';
+  const confirmed=orders.filter(o=>o.status==='confirmed');
+  const dispatched=orders.filter(o=>o.status==='dispatched');
+  const packed=dispatched.filter(o=>o.deliveryStatus==='packed');
+  const otd=dispatched.filter(o=>o.deliveryStatus==='out_for_delivery');
+  const delivered=dispatched.filter(o=>o.deliveryStatus==='delivered');
+  const failed=dispatched.filter(o=>o.deliveryStatus==='failed');
+
+  pc.innerHTML=`
+    <!-- Stats -->
+    <div class="g4" style="margin-bottom:16px">
+      <div class="sc blue"><div class="sc-l">Confirmed — To Pack</div><div class="sc-v">${confirmed.length}</div><div class="sc-s">Confirmed by admin</div></div>
+      <div class="sc gold"><div class="sc-l">Packed</div><div class="sc-v">${packed.length}</div><div class="sc-s">Ready for dispatch</div></div>
+      <div class="sc pur"><div class="sc-l">Out for Delivery</div><div class="sc-v">${otd.length}</div><div class="sc-s">On the way</div></div>
+      <div class="sc grn"><div class="sc-l">Delivered Today</div><div class="sc-v">${delivered.filter(o=>{const d=new Date(o.disp?.at||0);const t=new Date();return d.toDateString()===t.toDateString();}).length}</div><div class="sc-s">Successfully delivered</div></div>
+    </div>
+
+    <!-- Confirmed orders — needs packing -->
+    ${confirmed.length?`
+    <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--blue)">📦 Orders To Be Packed (${confirmed.length})</div>
+    ${confirmed.map(o=>`
+    <div class="dsp-card" style="border-left-color:var(--blue)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div>
+          <div style="font-size:12px;color:var(--mut);margin-top:3px">📱 ${o.custMob} | ₹${o.total.toLocaleString('en-IN')} | ${o.items.length} items | ${o.pay}</div>
+          <div style="font-size:12px;color:var(--mut)">🧑 SP: ${o.spName} | 📅 Order Date: ${o.date}</div>
+        </div>
+        <span class="dsp-status dsp-packed">📦 Confirmed</span>
+      </div>
+      <div class="oitems" style="margin-top:8px">${o.items.map(it=>`<div class="oitem"><span><b>${it.name}</b> (${it.code})</span><span>${it.qty} ${it.unit} | Size: ${it.size||'—'}</span></div>`).join('')}</div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-gold" style="padding:6px 14px;font-size:13px" onclick="openDeliveryUpdate('${o.id}')">📦 Pack & Dispatch</button>
+      </div>
+    </div>`).join('')}`:''}
+
+    <!-- Dispatched orders — status tracking -->
+    ${dispatched.length?`
+    <div class="divider"></div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--pur)">🚚 Dispatched Orders — Status Update (${dispatched.length})</div>
+    ${dispatched.map(o=>{
+      const ds=o.deliveryStatus||'packed';
+      const statusMap={packed:{cls:'dsp-packed',lbl:'📦 Packed'},out_for_delivery:{cls:'dsp-otd',lbl:'🚚 Out for Delivery'},delivered:{cls:'dsp-delivered',lbl:'✅ Delivered'},failed:{cls:'dsp-failed',lbl:'❌ Failed'},dispatched:{cls:'dsp-delivered',lbl:'✅ Dispatched'}};
+      const st=statusMap[ds]||statusMap.packed;
+      return`<div class="dsp-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:2px">🚛 ${o.disp?.courier||'—'} | Driver: ${o.disp?.driver||'—'} | Track: ${o.disp?.track||'—'}</div>
+            <div style="font-size:12px;color:var(--mut)">📅 Dispatch: ${o.disp?.date||'—'} | Exp. Delivery: ${o.disp?.del||'—'}</div>
+          </div>
+          <span class="dsp-status ${st.cls}">${st.lbl}</span>
+        </div>
+        ${ds!=='delivered'&&ds!=='failed'?`
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-blue" style="padding:5px 12px;font-size:12px" onclick="openDeliveryUpdate('${o.id}')">✏️ Update Status</button>
+        </div>`:`
+        <div style="margin-top:8px;font-size:11px;color:var(--mut)">Updated by: ${o.disp?.statusHistory?.[o.disp.statusHistory.length-1]?.by||'—'} at ${o.disp?.statusHistory?.[o.disp.statusHistory.length-1]?.at||'—'}</div>`}
+      </div>`;
+    }).join('')}`:''}
+
+    ${!confirmed.length&&!dispatched.length?'<div class="es"><div class="ei">✅</div>No orders at this time.</div>':''}`;
+}
+
+// Delivery Status Update
+let _proofOrderId=null, _proofPhotoData=null;
+function openDeliveryUpdate(orderId){
+  _proofOrderId=orderId;
+  _proofPhotoData=null;
+  const o=orders.find(x=>x.id===orderId); if(!o)return;
+  document.getElementById('deliveryProofOrderInfo').innerHTML=`<b>${o.id}</b> — ${o.custName} (${o.custMob})<br><span style="font-size:11px;color:var(--mut)">₹${o.total.toLocaleString('en-IN')} | ${o.items.length} items | Transport: ${o.disp?.courier||'Not dispatched yet'}</span>`;
+  // Pre-fill driver
+  document.getElementById('proof-driver').value=o.disp?.driver||'';
+  document.getElementById('proof-notes').value='';
+  document.getElementById('proof-status').value=o.deliveryStatus==='confirmed'?'packed':(o.deliveryStatus||'packed');
+  document.getElementById('proofPhotoPreview').innerHTML='<div style="font-size:24px;margin-bottom:5px">📷</div><div style="font-size:12px;color:var(--mut)">Click to take or upload proof photo</div>';
+  openM('mDeliveryProof');
+}
+function handleProofPhoto(e){
+  const file=e.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    _proofPhotoData=ev.target.result;
+    document.getElementById('proofPhotoPreview').innerHTML=`<img src="${_proofPhotoData}" style="max-width:100%;max-height:150px;border-radius:8px;object-fit:cover">`;
+  };
+  reader.readAsDataURL(file);
+}
+function saveDeliveryUpdate(){
+  const o=orders.find(x=>x.id===_proofOrderId); if(!o)return;
+  const newStatus=document.getElementById('proof-status').value;
+  const driver=document.getElementById('proof-driver').value.trim();
+  const notes=document.getElementById('proof-notes').value.trim();
+  if(!o.disp){ o.disp={courier:'—',track:'',date:new Date().toISOString().split('T')[0],del:'',driver,notes,at:new Date().toLocaleString('en-IN'),waMsg:'',statusHistory:[]}; }
+  if(!o.disp.statusHistory) o.disp.statusHistory=[];
+  o.deliveryStatus=newStatus;
+  o.disp.driver=driver||o.disp.driver;
+  if(_proofPhotoData) o.disp.proofPhoto=_proofPhotoData;
+  o.disp.statusHistory.push({status:newStatus,by:curUser.name,at:new Date().toLocaleString('en-IN'),notes,photo:_proofPhotoData?'yes':'no'});
+  if(newStatus==='out_for_delivery'||newStatus==='dispatched') o.status='dispatched';
+  if(newStatus==='delivered') o.status='dispatched';
+  sbSaveOrder(o); saveData();
+  const statusLabels={packed:'📦 Packed',out_for_delivery:'🚚 Out for Delivery',delivered:'✅ Delivered',failed:'❌ Failed'};
+  addNotif('dispatch',`${statusLabels[newStatus]||newStatus}: ${o.id}`,o.custName+' — '+o.custMob,o.id);
+  toast('✅ Status updated: '+o.id);
+  closeM('mDeliveryProof');
+  go('dispatch');
+}
+
+// ============================================================
+// UPDATE renderDispatchPage (admin view) to show delivery status
+// ============================================================
+function getDeliveryStatusBadge(o){
+  const ds=o.deliveryStatus||'';
+  if(!ds||ds==='dispatched')return'<span class="badge b-grn">✅ Dispatched</span>';
+  if(ds==='packed')return'<span class="dsp-status dsp-packed">📦 Packed</span>';
+  if(ds==='out_for_delivery')return'<span class="dsp-status dsp-otd">🚚 Out for Delivery</span>';
+  if(ds==='delivered')return'<span class="dsp-status dsp-delivered">✅ Delivered</span>';
+  if(ds==='failed')return'<span class="dsp-status dsp-failed">❌ Failed</span>';
+  return'<span class="badge b-grn">✅ Dispatched</span>';
 }
 
 </script>
