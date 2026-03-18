@@ -785,6 +785,18 @@ async function loadOfficeFromSupabase(){
 }
 loadOfficeLocation();
 
+// After localStorage loads, normalize SP routes if we have office coords
+function normalizeSpRoutes(){
+  if(!officeLat || !officeLng) return;
+  spList.forEach(s => {
+    if(s.route && s.route.length > 0 && s.route[0].t === 'start'){
+      s.route[0].lat = officeLat;
+      s.route[0].lng = officeLng;
+      s.route[0].lbl = officeName || 'Office';
+    }
+  });
+}
+
 // ============================================================
 // MULTI-USER: max 20 salespersons cap
 // ============================================================
@@ -901,6 +913,16 @@ async function loadFromSupabase(){
     lsSave();
     toast('☁️ Data loaded from Supabase!','var(--grn)');
     await loadOfficeFromSupabase();
+    // Normalize all SP route start points to match current office location
+    if(officeLat && officeLng){
+      spList.forEach(s => {
+        if(s.route && s.route.length > 0 && s.route[0].t === 'start'){
+          s.route[0].lat = officeLat;
+          s.route[0].lng = officeLng;
+          s.route[0].lbl = officeName || 'Office';
+        }
+      });
+    }
     // Load admin password from Supabase settings
     try{
       const {data:apd}=await sb.from('settings').select('value').eq('key','admin_pass').maybeSingle();
@@ -924,6 +946,7 @@ function showDbLoader(show){
 }
 
 lsLoad();
+normalizeSpRoutes(); // Update SP route starts with stored office coords
 setInterval(()=>{ lsSave(); },30000);
 
 // ============================================================
@@ -1185,16 +1208,17 @@ function doPunchIn(){
   if(sp){
     sp.checkedIn = true;
     sp.cin = cinTime;
-    // Make sure route has start point at office/current location
-    const startLat = myLat || officeLat || 20.5937;
-    const startLng = myLng || officeLng || 78.9629;
+    // Set/update route start point to office location (not GPS — GPS is moving, office is fixed)
+    const offLat = officeLat || 20.5937;
+    const offLng = officeLng || 78.9629;
     if(!sp.route || !sp.route.length){
-      sp.route = [{lat:startLat, lng:startLng, lbl:officeName||'Office', t:'start', tm:cinTime}];
-    } else {
-      // Update start point coords if we now have GPS
-      if(myLat && sp.route[0]?.t === 'start'){
-        sp.route[0].lat = myLat; sp.route[0].lng = myLng; sp.route[0].tm = cinTime;
-      }
+      sp.route = [{lat:offLat, lng:offLng, lbl:officeName||'Office', t:'start', tm:cinTime}];
+    } else if(sp.route[0]?.t === 'start'){
+      // Always update start point to current office coordinates
+      sp.route[0].lat = offLat;
+      sp.route[0].lng = offLng;
+      sp.route[0].lbl = officeName||'Office';
+      sp.route[0].tm = cinTime;
     }
     sbSaveSP(sp);
     saveData();
@@ -1930,31 +1954,54 @@ function initMyMap(sp){
   const el = document.getElementById('trackMap'); if(!el) return;
   if(tMap){ tMap.invalidateSize(); updateMyMapLiveDot(); return; }
 
-  const defLat = myLat || officeLat || 20.5937;
-  const defLng = myLng || officeLng || 78.9629;
-  const zoom   = myLat ? 15 : 5;
+  // Center priority: GPS location > Office location > India default
+  const centerLat = myLat || officeLat || 20.5937;
+  const centerLng = myLng || officeLng || 78.9629;
+  // Always zoom to street level (15) if we have GPS or office; country level (5) only as last resort
+  const zoom = (myLat || officeLat) ? 15 : 5;
 
-  tMap = L.map('trackMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],zoom);
+  tMap = L.map('trackMap',{zoomControl:true,attributionControl:false}).setView([centerLat,centerLng],zoom);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CartoDB'}).addTo(tMap);
 
   const col = C[0];
 
-  // Draw saved route markers (visits etc.)
+  // Draw route markers — normalize start point to current office coords
   if(sp && sp.route && sp.route.length > 0){
-    const validPts = sp.route.filter(r => r.lat && r.lng && r.t !== 'cur');
-    if(validPts.length > 1)
+    // Normalize: if start point has old placeholder coords, use office coords instead
+    const route = sp.route.map(r => {
+      if(r.t === 'start' && officeLat && officeLng){
+        return {...r, lat:officeLat, lng:officeLng, lbl:officeName||'Office'};
+      }
+      return r;
+    });
+
+    const validPts = route.filter(r => r.lat && r.lng && r.t !== 'cur');
+
+    // Only draw route line if there are actual visits (more than just the start point)
+    const visitPts = validPts.filter(r => r.t === 'visit');
+    if(visitPts.length > 0)
       tL.push(L.polyline(validPts.map(r=>[r.lat,r.lng]),{color:col,weight:3,opacity:.7,dashArray:'6,4'}).addTo(tMap));
+
     let mvn = 0;
     validPts.forEach(r => {
       let ic;
       if(r.t === 'start'){
-        ic = L.divIcon({html:`<div style="background:#111827;color:#fff;padding:4px 9px;border-radius:8px;font-size:11px;font-weight:700;border:2px solid ${col};white-space:nowrap">🏠 ${r.lbl||'Office'}</div>`,className:'',iconSize:[90,24],iconAnchor:[45,12]});
+        ic = L.divIcon({
+          html:`<div style="background:#111827;color:${col};padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;border:1.5px solid ${col};white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)">🏢 ${r.lbl||'Office'}</div>`,
+          className:'', iconSize:[100,22], iconAnchor:[50,11]
+        });
       } else {
         mvn++;
         ic = L.divIcon({html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#000">${mvn}</div>`,className:'',iconSize:[28,28],iconAnchor:[14,14]});
       }
       tL.push(L.marker([r.lat,r.lng],{icon:ic}).addTo(tMap).bindPopup(`<b>${r.lbl}</b><br><small>🕐 ${r.tm}${r.t==='visit'?' • Visit #'+mvn:''}</small>`));
     });
+
+    // fitBounds only when there are actual visits AND no live GPS
+    // (GPS takes priority — we don't want fitBounds zooming out to show office)
+    if(!myLat && visitPts.length > 0){
+      tMap.fitBounds(L.latLngBounds(validPts.map(r=>[r.lat,r.lng])),{padding:[40,40]});
+    }
   }
 
   // Place live dot immediately if GPS is available
@@ -1973,10 +2020,15 @@ function updateMyMapLiveDot(){
 
   if(tMapLiveDot){
     tMapLiveDot.setLatLng([myLat, myLng]);
+    // Smoothly pan to keep live dot visible (but don't force zoom)
+    if(!tMap.getBounds().contains([myLat, myLng])){
+      tMap.panTo([myLat, myLng]);
+    }
   } else {
     tMapLiveDot = L.marker([myLat, myLng], {icon:liveIcon, zIndexOffset:1000})
       .addTo(tMap)
       .bindPopup('📍 Your current location');
+    // Center on live dot at street level
     tMap.setView([myLat, myLng], 15);
   }
 }
