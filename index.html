@@ -359,7 +359,7 @@ select option{background:var(--sur2)}
   <div class="mo-h"><div class="mo-t" id="mSPTitle">➕ Add Salesperson</div><button class="xb" onclick="closeM('mSP')">✕</button></div>
   <div class="fg">
     <div class="fgr full"><label>Full Name *</label><input type="text" id="sp-name" placeholder="Salesperson full name"></div>
-    <div class="fgr"><label>User ID *</label><input type="text" id="sp-id" placeholder="e.g. john01" autocomplete="off"></div>
+    <div class="fgr"><label>User ID *</label><input type="text" id="sp-id" placeholder="e.g. sp01" autocomplete="off"></div>
     <div class="fgr"><label>Password *</label><input type="password" id="sp-pass" placeholder="Set password" autocomplete="off"></div>
     <div class="fgr"><label>Mobile</label><input type="tel" id="sp-mob" placeholder="9876543210" maxlength="10"></div>
     <div class="fgr"><label>Zone / Area</label><input type="text" id="sp-zone" placeholder="e.g. North Zone"></div>
@@ -375,7 +375,7 @@ select option{background:var(--sur2)}
 <div class="mov" id="mCust"><div class="mo" style="max-width:660px">
   <div class="mo-h"><div class="mo-t">👥 Add Customer</div><button class="xb" onclick="closeM('mCust')">✕</button></div>
   <div class="fg">
-    <div class="fgr full"><label>Company / Firm Name *</label><input type="text" id="cu-name" placeholder="e.g. Gupta Interiors Pvt Ltd"></div>
+    <div class="fgr full"><label>Company / Firm Name *</label><input type="text" id="cu-name" placeholder="e.g. ABC Interiors"></div>
     <div class="fgr"><label>GST Number</label><input type="text" id="cu-gst" placeholder="27AABCU9603R1ZM" maxlength="15" style="text-transform:uppercase"></div>
     <div class="fgr"><label>Mobile Number *</label><input type="tel" id="cu-mob" placeholder="9876543210" maxlength="10"></div>
     <div class="fgr"><label>Contact Person</label><input type="text" id="cu-con" placeholder="Owner / Manager name"></div>
@@ -565,7 +565,7 @@ select option{background:var(--sur2)}
 <div class="mov" id="mProd"><div class="mo sm">
   <div class="mo-h"><div class="mo-t">📦 Add Product</div><button class="xb" onclick="closeM('mProd')">✕</button></div>
   <div class="fg">
-    <div class="fgr full"><label>Product Name *</label><input type="text" id="p-name" placeholder="e.g. Venetian Mosaic Tiles"></div>
+    <div class="fgr full"><label>Product Name *</label><input type="text" id="p-name" placeholder="e.g. Wall Tile Glossy White"></div>
     <div class="fgr"><label>Item Code *</label><input type="text" id="p-code" placeholder="e.g. VMT-001" style="text-transform:uppercase"></div>
     <div class="fgr"><label>Category</label>
       <select id="p-cat">
@@ -608,7 +608,7 @@ select option{background:var(--sur2)}
   </div>
   <div style="margin-bottom:10px">
     <label style="font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">📝 Or paste data directly (Excel copy-paste also works):</label>
-    <textarea id="bulkPartyText" rows="8" placeholder="Customer Name, Mobile, GST, Contact, City, State, Address, Type, SP-ID&#10;Sharma Interiors, 9876543210, 22ABCDE1234F1Z5, Rahul Sharma, Mumbai, Maharashtra, Shop 12 Main Market, Retailer, ravi01&#10;Patel Tiles, 9765432100, 24XYZAB5678G2Z1, Kiran Patel, Ahmedabad, Gujarat, Opp Bus Stand, Dealer," style="font-size:12px;font-family:monospace;line-height:1.6"></textarea>
+    <textarea id="bulkPartyText" rows="8" placeholder="Customer Name, Mobile, GST, Contact, City, State, Address, Type, SP-ID&#10;ABC Interiors, 9876543210, 24AABCA1234A1Z1, Ramesh Shah, Surat, Gujarat, Shop 5 Ring Road, Retailer, sp01" style="font-size:12px;font-family:monospace;line-height:1.6"></textarea>
   </div>
   <div id="bulkPartyPreview" style="display:none">
     <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;color:var(--grn)">✅ Preview — Records to be imported:</div>
@@ -641,7 +641,7 @@ select option{background:var(--sur2)}
   </div>
   <div style="margin-bottom:10px">
     <label style="font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">📝 Or paste data directly (Excel copy-paste also works):</label>
-    <textarea id="bulkCatText" rows="8" placeholder="Item Code, Product Name, Category, Price, Unit, Sizes, HSN Code, Description&#10;VMT-010, Venetian Mosaic Premium, Mosaic, 220, Sq.Ft, 12x12 24x24, 69072100, Premium Italian mosaic&#10;3DP-020, 3D Wave Panel, 3D Panels, 280, Sq.Ft, 24x48, 39206100, Modern wave design" style="font-size:12px;font-family:monospace;line-height:1.6"></textarea>
+    <textarea id="bulkCatText" rows="8" placeholder="Item Code, Product Name, Category, Price, Unit, Sizes, HSN Code, Description&#10;PROD-001, Product Name, Wall Tiles, 100, Sq.Ft, 12x18, 69072100, Product description" style="font-size:12px;font-family:monospace;line-height:1.6"></textarea>
   </div>
   <div id="bulkCatPreview" style="display:none">
     <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;color:var(--grn)">✅ Preview — Records to be imported:</div>
@@ -677,7 +677,7 @@ select option{background:var(--sur2)}
       </select>
     </div>
     <div class="fgr full"><label>Description / Remarks *</label>
-      <input type="text" id="exp-desc" placeholder="e.g. Petrol — Office to Sharma Interiors visit">
+      <input type="text" id="exp-desc" placeholder="e.g. Petrol — Office to customer visit">
     </div>
     <div class="fgr full"><label>Party / Customer Visit (if applicable)</label>
       <select id="exp-party"><option value="">-- None / General --</option></select>
@@ -785,6 +785,19 @@ async function loadOfficeFromSupabase(){
 }
 loadOfficeLocation();
 
+// ── Data version wipe — clears stale localStorage from old versions ──
+(function wipeLegacyData(){
+  const DATA_VERSION = '2025-final';
+  const stored = localStorage.getItem('dcrm_data_version');
+  if(stored !== DATA_VERSION){
+    // Clear all app data keys (keeps device_id and admin_pass)
+    const keep = ['dcrm_device_id','dcrm_admin_pass','dcrm_office'];
+    Object.keys(localStorage).filter(k=>k.startsWith('dcrm_')&&!keep.includes(k)).forEach(k=>localStorage.removeItem(k));
+    localStorage.setItem('dcrm_data_version', DATA_VERSION);
+    console.log('DecoCRM: Local data cleared for fresh start');
+  }
+})();
+
 // After localStorage loads, normalize SP routes if we have office coords
 function normalizeSpRoutes(){
   if(!officeLat || !officeLng) return;
@@ -815,6 +828,11 @@ let iCnt=0, curDispId=null, curUser=null, pinTime=null, wInt=null, currentPage='
 let myLat=null, myLng=null, dMap=null, tMap=null, dL=[], tL=[], selAgt=0;
 let liveLocInterval=null; // Interval that pushes SP GPS to Supabase every 30s
 let adminLiveMarkers={}; // sp_id → Leaflet marker on admin dashMap
+let sessionCheckInterval=null; // Checks if this device is still the active session
+
+// Persistent device fingerprint for this browser instance
+let deviceId = localStorage.getItem('dcrm_device_id');
+if(!deviceId){ deviceId = 'dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7); localStorage.setItem('dcrm_device_id',deviceId); }
 let editSPIdx=-1;
 let expenses=[], expFiles=[];
 
@@ -1030,9 +1048,30 @@ function handleRealtimeCustomer(payload){
 function handleRealtimeLiveLocation(payload){
   const r = payload.new || payload.old;
   if(!r || !r.id) return;
+
+  // ── Event notifications (punch-in / punch-out) ──
+  // These use id format "spid_event" to distinguish from GPS rows
+  if(r.id && r.id.endsWith('_event')){
+    if(curUser && curUser.role === 'admin'){
+      const spName = r.sp_name || 'A salesperson';
+      const t = r.cin || new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      if(r.checked_in){
+        addNotif('checkin','🟢 Punch In: '+spName,spName+' punched in at '+t,null);
+        toast('🟢 '+spName+' punched in at '+t,'var(--grn)');
+      } else {
+        addNotif('checkin','🔴 Punch Out: '+spName,spName+' punched out at '+t,null);
+        toast('🔴 '+spName+' punched out at '+t,'var(--red)');
+      }
+      updBadges();
+    }
+    return; // don't update map for event rows
+  }
+
+  // ── Regular GPS location update ──
   const sp = spList.find(s => s.id === r.id);
   if(!sp) return;
   // Update in-memory SP with live data
+  const wasOnline = sp.checkedIn;
   sp.checkedIn = r.checked_in;
   sp.cin = r.cin || '—';
   sp.visits = r.visits || 0;
@@ -1041,7 +1080,7 @@ function handleRealtimeLiveLocation(payload){
   if(r.lng) sp.liveLng = r.lng;
   if(r.route){ try{ sp.route = JSON.parse(r.route); }catch(e){} }
   normalizeSpRoutes();
-  // If admin is on the map page, update the marker live
+  // If admin: update map and status panel live
   if(curUser && curUser.role === 'admin'){
     updBadges(); updS();
     if(currentPage === 'map' || currentPage === 'dash') updateAdminMapMarker(sp);
@@ -1172,7 +1211,7 @@ async function pushLiveLocation(){
     sp_name: curUser.name,
     lat: myLat,
     lng: myLng,
-    accuracy: 0,
+    accuracy: deviceId, // reuse accuracy field to store device ID
     checked_in: true,
     cin: sp?.cin || new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
     route: JSON.stringify(sp?.route || []),
@@ -1188,10 +1227,38 @@ function startLiveLocationPush(){
   if(liveLocInterval) return; // already running
   pushLiveLocation(); // push immediately on punch-in
   liveLocInterval = setInterval(pushLiveLocation, 30000); // then every 30s
+  // Start session integrity check every 60s
+  sessionCheckInterval = setInterval(checkSessionIntegrity, 60000);
+}
+
+async function checkSessionIntegrity(){
+  if(!supaReady || !curUser || curUser.role !== 'sales') return;
+  try{
+    const {data}=await sb.from('sp_locations').select('accuracy,checked_in').eq('id',curUser.id).maybeSingle();
+    if(data && data.checked_in && data.accuracy && data.accuracy !== deviceId){
+      // Another device logged in and is actively pushing — force logout
+      clearSession();
+      clearInterval(liveLocInterval); liveLocInterval=null;
+      clearInterval(sessionCheckInterval); sessionCheckInterval=null;
+      clearInterval(wInt);
+      curUser=null; pinTime=null;
+      document.getElementById('app').classList.remove('show');
+      document.getElementById('punchbar').classList.remove('show');
+      document.getElementById('punchScreen').classList.remove('visible');
+      document.getElementById('loginScreen').style.display='flex';
+      const err=document.getElementById('loginErr');
+      err.style.display='block';
+      err.style.color='var(--acc)';
+      err.style.background='rgba(245,158,11,.1)';
+      err.style.borderColor='rgba(245,158,11,.3)';
+      err.innerHTML='⚠️ You were logged out because the same account logged in on another device.';
+    }
+  }catch(e){}
 }
 
 function stopLiveLocationPush(){
   if(liveLocInterval){ clearInterval(liveLocInterval); liveLocInterval = null; }
+  if(sessionCheckInterval){ clearInterval(sessionCheckInterval); sessionCheckInterval = null; }
   // Mark offline in Supabase
   if(!supaReady || !curUser || curUser.role !== 'sales') return;
   const sp = spList.find(s => s.id === curUser.id);
@@ -1270,6 +1337,7 @@ async function doLogin(){
     else { match=pass===storedAdminPass; if(match){ localStorage.setItem('dcrm_admin_pass',await hashPass(pass)); } }
     if(match){
       curUser={id:'admin',name:'Admin',role:'admin'};
+      saveSession();
       err.style.display='none';
       document.getElementById('loginScreen').style.display='none';
       if(btn){btn.textContent='🚀 Login';btn.disabled=false;}
@@ -1284,7 +1352,26 @@ async function doLogin(){
   const sp=spList.find(s=>s.id===id&&s.status==='active'&&(s.pass===hashed||(!isHashed(s.pass)&&s.pass===pass)));
   if(sp){
     if(!isHashed(sp.pass)){ sp.pass=hashed; sbSaveSP(sp); lsSave(); }
+    // Single device check: see if this SP is already logged in on another device
+    if(supaReady){
+      try{
+        const {data:locRow}=await sb.from('sp_locations').select('accuracy,checked_in,updated_at').eq('id',sp.id).maybeSingle();
+        if(locRow && locRow.checked_in && locRow.accuracy && locRow.accuracy !== deviceId){
+          const ageMin=(Date.now()-new Date(locRow.updated_at))/60000;
+          if(ageMin < 10){ // active within last 10 minutes = genuinely on another device
+            err.style.display='block';
+            err.style.color='var(--acc)';
+            err.style.background='rgba(245,158,11,.1)';
+            err.style.borderColor='rgba(245,158,11,.3)';
+            err.innerHTML='⚠️ Already logged in on another device.<br><small>Ask that device to punch out first, or wait 10 minutes.</small>';
+            if(btn){btn.textContent='🚀 Login';btn.disabled=false;}
+            return;
+          }
+        }
+      }catch(e){}
+    }
     curUser={id:sp.id,name:sp.name,role:'sales'};
+    saveSession();
     err.style.display='none';
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('punchScreen').classList.add('visible');
@@ -1298,6 +1385,7 @@ async function doLogin(){
   if(dp){
     if(!isHashed(dp.pass)){ dp.pass=hashed; sbSaveSP(dp); lsSave(); }
     curUser={id:dp.id,name:dp.name,role:'dispatch'};
+    saveSession();
     err.style.display='none';
     document.getElementById('loginScreen').style.display='none';
     // Dispatch staff goes directly to app (no punch screen)
@@ -1311,6 +1399,7 @@ async function doLogin(){
 
 function doLogout(){
   if(!confirm('Are you sure you want to logout?'))return;
+  clearSession();
   clearInterval(wInt);
   curUser=null; pinTime=null;
   document.getElementById('app').classList.remove('show');
@@ -1366,6 +1455,7 @@ function doPunchIn(){
     saveData();
   }
 
+  saveSession(pinTime.toISOString()); // persist pinTime so refresh restores punch state
   document.getElementById('punchScreen').classList.remove('visible');
   document.getElementById('punchbar').classList.add('show');
   document.getElementById('pbName').textContent = '✅ ' + curUser.name + ' — Punched In';
@@ -1390,6 +1480,17 @@ function doPunchIn(){
   // Note: the GPS watchPosition handler also calls pushLiveLocation() on each GPS fix
   // so the first push happens as soon as GPS lock is acquired
   startLiveLocationPush();
+  // Notify admin of punch-in via sp_locations event field
+  if(supaReady){
+    const cinTime2=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    sbUpsert('sp_locations',{
+      id:curUser.id+'_event', sp_name:curUser.name,
+      lat:myLat||null, lng:myLng||null, accuracy:0,
+      checked_in:true, cin:cinTime2,
+      route:JSON.stringify([]), visits:0, km:'0 km',
+      updated_at:new Date().toISOString()
+    }).catch(()=>{});
+  }
   startApp();
   toast('✅ Punched In! Have a productive day.');
 }
@@ -1404,6 +1505,17 @@ function doPunchOut(){
   document.getElementById('app').classList.remove('show');
   document.getElementById('punchScreen').classList.add('visible');
   stopLiveLocationPush();
+  // Notify admin of punch-out
+  if(supaReady && curUser){
+    const outTime=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    sbUpsert('sp_locations',{
+      id:curUser.id+'_event', sp_name:curUser.name,
+      lat:myLat||null, lng:myLng||null, accuracy:0,
+      checked_in:false, cin:outTime,
+      route:JSON.stringify([]), visits:0, km:'0 km',
+      updated_at:new Date().toISOString()
+    }).catch(()=>{});
+  }
   if(visitMap){visitMap.remove();visitMap=null;}
   if(tMap){tMap.remove();tMap=null;}
   tMapLiveDot = null;
@@ -2454,13 +2566,11 @@ function triggerDownload(content,filename){
 function downloadPartySample(){
   const rows=[
     'Customer Name,Mobile,GST Number,Contact Person,City,State,Address,Type,Salesperson ID',
-    'Sharma Interiors,9876543210,22ABCDE1234F1Z5,Rahul Sharma,Mumbai,Maharashtra,Shop 12 Main Market,Retailer,ravi01',
-    'Patel Tiles & More,9765432100,24XYZAB5678G2Z1,Kiran Patel,Ahmedabad,Gujarat,Opp Bus Stand Ring Road,Dealer,priya02',
-    'Gupta Decor House,9654321098,,Suresh Gupta,Delhi,Delhi,F-45 Lajpat Nagar,Distributor,',
-    'Modern Architects,9543210987,07LMNOP3456H3Z2,Priya Mehta,Jaipur,Rajasthan,C-12 Vaishali Nagar,Architect,amit03',
-    'BuildWell Builders,9432109876,,Anil Singh,Pune,Maharashtra,Near Koregaon Park,Builder,'
+    'ABC Interiors,9876543210,24AABCA1234A1Z1,Ramesh Shah,Surat,Gujarat,Shop 5 Ring Road,Retailer,sp01',
+    'XYZ Tiles,9765432100,,Suresh Patel,Ahmedabad,Gujarat,Near Bus Stand,Dealer,sp01',
+    'PQR Builders,9654321098,24BBBPQ9876B2Z2,Rakesh Kumar,Vadodara,Gujarat,Station Road,Contractor,'
   ];
-  triggerDownload(rows.join('\r\n'),'Party_Bulk_Upload_Sample.csv');
+  triggerDownload(rows.join('\r\n'),'Customer_Upload_Sample.csv');
   toast('✅ Sample CSV downloading!','var(--blue)');
 }
 
@@ -2551,16 +2661,11 @@ function handleBulkCatFile(e){
 function downloadCatSample(){
   const rows=[
     'Item Code,Product Name,Category,Price,Unit,Sizes,HSN Code,Description',
-    'VMT-010,Venetian Mosaic Premium,Mosaic,220,Sq.Ft,12x12 24x24,69072100,Premium Italian mosaic tiles',
-    '3DP-020,3D Wave Panel,3D Panels,280,Sq.Ft,24x48,39206100,Modern wave design wall panel',
-    'SCS-030,Stone Cladding Natural,Stone Cladding,380,Sq.Ft,12x24 24x24,68021000,Natural stone look slate',
-    'LWP-040,Luxury Wallpaper Gold,Wallpaper,110,Sq.Ft,Standard Roll,48142000,Premium gold designer wallpaper',
-    'PCP-050,PVC Ceiling Panel White,PVC Panels,70,Sq.Ft,12inch 8inch,39206100,Waterproof PVC ceiling panel',
-    'GMT-060,Glass Mosaic Blue,Glass Mosaic,310,Sq.Ft,2x2 4x4,70099200,Crystal blue glass mosaic',
-    'WTL-070,Wall Tile Glossy White,Wall Tiles,85,Sq.Ft,12x18 12x24,69072100,Glossy white wall tiles',
-    'FLT-080,Floor Tile Anti-skid Grey,Floor Tiles,95,Sq.Ft,24x24 32x32,69072200,Anti-skid grey floor tiles'
+    'PROD-001,Product Name 1,Wall Tiles,100,Sq.Ft,12x18 12x24,69072100,Description here',
+    'PROD-002,Product Name 2,Floor Tiles,120,Sq.Ft,24x24 32x32,69072200,Description here',
+    'PROD-003,Product Name 3,Mosaic,200,Sq.Ft,12x12,69072100,Description here'
   ];
-  triggerDownload(rows.join('\r\n'),'Catalogue_Bulk_Upload_Sample.csv');
+  triggerDownload(rows.join('\r\n'),'Catalogue_Upload_Sample.csv');
   toast('✅ Sample CSV downloading!','var(--blue)');
 }
 
@@ -3212,7 +3317,7 @@ function renderND(){
   if(!notifs.length){el.innerHTML='<div class="es" style="padding:18px">No notifications</div>';return;}
   el.innerHTML=notifs.slice(0,7).map(n=>`<div class="nitem${n.read?'':' unread'}">
     <div style="display:flex;gap:10px">
-      <span style="font-size:16px">${n.type==='order'?'🛒':n.type==='dispatch'?'🚚':n.type==='expense'?'💸':'✅'}</span>
+      <span style="font-size:16px">${n.type==='order'?'🛒':n.type==='dispatch'?'🚚':n.type==='expense'?'💸':n.type==='checkin'||n.type==='visit'?'📍':'✅'}</span>
       <div style="flex:1">
         <div style="font-weight:700;font-size:12px">${n.title}</div>
         <div style="font-size:11px;color:var(--mut);margin-top:2px">${n.body}</div>
@@ -3226,7 +3331,7 @@ function renderNotifsPage(pc){
   pc.innerHTML=`<div class="sec-h"><span class="sec-t">🔔 All Notifications</span><button class="btn btn-out" onclick="markAllRead()">✓ Mark All Read</button></div>`+
     (notifs.length?notifs.map(n=>`<div class="card" style="margin-bottom:10px;border-left:4px solid ${n.type==='order'?'var(--acc)':n.type==='dispatch'?'var(--grn)':'var(--pur)'}">
       <div style="display:flex;gap:12px">
-        <span style="font-size:20px">${n.type==='order'?'🛒':n.type==='dispatch'?'🚚':n.type==='expense'?'💸':'✅'}</span>
+        <span style="font-size:20px">${n.type==='order'?'🛒':n.type==='dispatch'?'🚚':n.type==='expense'?'💸':n.type==='checkin'||n.type==='visit'?'📍':'✅'}</span>
         <div style="flex:1">
           <div style="font-weight:700;font-size:13px">${n.title}${!n.read?' <span style="font-size:10px;background:var(--acc);color:#000;padding:1px 7px;border-radius:10px;margin-left:6px">NEW</span>':''}</div>
           <div style="font-size:12px;color:var(--mut);margin-top:4px">${n.body}</div>
@@ -3508,6 +3613,58 @@ function toast(msg,col){
 }
 
 // Drag & Drop for expense upload zone
+// ============================================================
+// SESSION PERSISTENCE — survives page refresh, clears on close
+// ============================================================
+function saveSession(pinISO){
+  const s={id:curUser.id,name:curUser.name,role:curUser.role};
+  if(pinISO) s.pin=pinISO;
+  else if(pinTime) s.pin=pinTime.toISOString();
+  sessionStorage.setItem('dcrm_sess',JSON.stringify(s));
+}
+function clearSession(){ sessionStorage.removeItem('dcrm_sess'); }
+
+async function tryRestoreSession(){
+  const raw=sessionStorage.getItem('dcrm_sess');
+  if(!raw) return false;
+  try{
+    const s=JSON.parse(raw);
+    if(!s||!s.id||!s.role) return false;
+    // Init Supabase first so spList is populated
+    initSupabase();
+    await loadFromSupabase();
+    // Verify user still exists and is active
+    if(s.role==='admin'){
+      curUser={id:'admin',name:'Admin',role:'admin'};
+    } else if(s.role==='sales'){
+      const sp=spList.find(x=>x.id===s.id&&x.status==='active');
+      if(!sp){ clearSession(); return false; }
+      curUser={id:sp.id,name:sp.name,role:'sales'};
+    } else if(s.role==='dispatch'){
+      const dp=dispatchList.find(x=>x.id===s.id&&x.status==='active');
+      if(!dp){ clearSession(); return false; }
+      curUser={id:dp.id,name:dp.name,role:'dispatch'};
+    } else { clearSession(); return false; }
+    // Restore punch state for sales
+    if(s.role==='sales' && s.pin){
+      pinTime=new Date(s.pin);
+      // Restore punch bar
+      const cinTime=pinTime.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      document.getElementById('punchbar').classList.add('show');
+      document.getElementById('pbName').textContent='✅ '+curUser.name+' — Punched In';
+      document.getElementById('pbSub').textContent='📍 Restored session | 🕐 '+cinTime;
+      wInt=setInterval(()=>{
+        const d=Math.floor((new Date()-pinTime)/1000);
+        document.getElementById('wTimer').textContent=pad(Math.floor(d/3600))+':'+pad(Math.floor(d%3600/60))+':'+pad(d%60);
+      },1000);
+      startLiveLocationPush();
+    }
+    document.getElementById('loginScreen').style.display='none';
+    startApp();
+    return true;
+  }catch(e){ clearSession(); return false; }
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   const zone=document.getElementById('expUploadZone');
   if(!zone)return;
@@ -3526,6 +3683,8 @@ document.addEventListener('DOMContentLoaded',()=>{
       reader.readAsDataURL(file);
     });
   });
+  // Try to restore session on page load (refresh without re-login)
+  tryRestoreSession();
 });
 
 // ============================================================
