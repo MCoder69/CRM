@@ -813,6 +813,8 @@ let products=[];
 
 let iCnt=0, curDispId=null, curUser=null, pinTime=null, wInt=null, currentPage='dash';
 let myLat=null, myLng=null, dMap=null, tMap=null, dL=[], tL=[], selAgt=0;
+let liveLocInterval=null; // Interval that pushes SP GPS to Supabase every 30s
+let adminLiveMarkers={}; // sp_id → Leaflet marker on admin dashMap
 let editSPIdx=-1;
 let expenses=[], expFiles=[];
 
@@ -923,6 +925,8 @@ async function loadFromSupabase(){
         }
       });
     }
+    // Load latest live locations for admin map
+    await loadSpLiveLocations();
     // Load admin password from Supabase settings
     try{
       const {data:apd}=await sb.from('settings').select('value').eq('key','admin_pass').maybeSingle();
@@ -967,6 +971,9 @@ function startRealtime(){
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'salespersons'},payload=>{
       handleRealtimeSP(payload);
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'sp_locations'},payload=>{
+      handleRealtimeLiveLocation(payload);
     })
     .subscribe(status=>{
       const el=document.getElementById('sbSyncStatus');
@@ -1019,6 +1026,63 @@ function handleRealtimeCustomer(payload){
   lsSave(); updS();
   if(['customers','dash'].includes(currentPage)) renderPage(currentPage);
 }
+// Called every time a salesperson pushes their GPS to Supabase
+function handleRealtimeLiveLocation(payload){
+  const r = payload.new || payload.old;
+  if(!r || !r.id) return;
+  const sp = spList.find(s => s.id === r.id);
+  if(!sp) return;
+  // Update in-memory SP with live data
+  sp.checkedIn = r.checked_in;
+  sp.cin = r.cin || '—';
+  sp.visits = r.visits || 0;
+  sp.km = r.km || '0 km';
+  if(r.lat) sp.liveLat = r.lat;
+  if(r.lng) sp.liveLng = r.lng;
+  if(r.route){ try{ sp.route = JSON.parse(r.route); }catch(e){} }
+  normalizeSpRoutes();
+  // If admin is on the map page, update the marker live
+  if(curUser && curUser.role === 'admin'){
+    updBadges(); updS();
+    if(currentPage === 'map' || currentPage === 'dash') updateAdminMapMarker(sp);
+    if(currentPage === 'map') updateAgentStatusPanel();
+  }
+}
+
+// Update or create a live GPS marker for one SP on admin map
+function updateAdminMapMarker(sp){
+  if(!dMap || !sp.liveLat || !sp.liveLng) return;
+  const col = C[spList.indexOf(sp) % C.length];
+  const i = spList.indexOf(sp);
+  const html = `<div style="position:relative">
+    <div style="position:absolute;width:30px;height:30px;border-radius:50%;background:${col};opacity:.2;top:-15px;left:-15px;animation:blink 1.5s infinite"></div>
+    <div style="background:#111827;border:2.5px solid ${col};border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;color:${col};white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.6)">
+      📍 ${sp.name.split(' ')[0]}
+    </div>
+  </div>`;
+  const icon = L.divIcon({html, className:'', iconSize:[100,30], iconAnchor:[50,15]});
+  if(adminLiveMarkers[sp.id]){
+    adminLiveMarkers[sp.id].setLatLng([sp.liveLat, sp.liveLng]);
+    adminLiveMarkers[sp.id].setIcon(icon);
+  } else {
+    adminLiveMarkers[sp.id] = L.marker([sp.liveLat, sp.liveLng], {icon, zIndexOffset:2000})
+      .addTo(dMap)
+      .bindPopup(`<b>${sp.name}</b><br>📍 Live GPS<br>🕐 ${sp.cin} • ${sp.visits} visits`);
+    dL.push(adminLiveMarkers[sp.id]);
+  }
+}
+
+function updateAgentStatusPanel(){
+  const el = document.getElementById('agentStatusList');
+  if(!el) return;
+  el.innerHTML = spList.map((s,i) => `<div class="trow">
+    <div class="tdot" style="background:${s.checkedIn?C[i]:'var(--mut)'}"></div>
+    <div style="flex:1"><div style="font-weight:700;font-size:13px">${s.name}</div>
+    <div style="font-size:11px;color:var(--mut)">${s.zone} • ${s.visits} visits • ${s.km}</div></div>
+    <span class="badge ${s.checkedIn?'b-grn':'b-red'}">${s.checkedIn?'● LIVE':'Offline'}</span>
+  </div>`).join('');
+}
+
 function handleRealtimeSP(payload){
   const r=payload.new||payload.old;
   if(!r) return;
@@ -1074,15 +1138,17 @@ function startGPS(){
         ' (±' + Math.round(pos.coords.accuracy) + 'm)';
       // Update live dot on My Location map if open
       updateMyMapLiveDot();
+      // Push to Supabase if salesperson and punched in
+      if(liveLocInterval) pushLiveLocation();
     },
     err => {
       // Don't null out myLat — keep last known if we had one
       const d = document.getElementById('locDot');
       if(d) d.className = 'loc-dot';
-      const t = document.getElementById('locTxt');
+      const te = document.getElementById('locTxt');
       const msgs = {1:'Permission denied — please allow location access in browser settings',
                     2:'GPS signal unavailable', 3:'GPS timed out — retrying...'};
-      if(t) t.textContent = '⚠️ ' + (msgs[err.code]||'Location unavailable');
+      if(te) te.textContent = '⚠️ ' + (msgs[err.code]||'Location unavailable');
       // On permission denied, stop watching
       if(err.code === 1){ navigator.geolocation.clearWatch(gpsWatcher); gpsWatcher = null; }
     },
@@ -1092,6 +1158,81 @@ function startGPS(){
 
 // Start GPS as soon as page loads (desktop grants silently; mobile prompts on interaction)
 startGPS();
+
+// ============================================================
+// LIVE LOCATION PUSH — Salesperson → Supabase every 30s
+// Admin subscribes via realtime and sees updates instantly
+// ============================================================
+async function pushLiveLocation(){
+  if(!supaReady || !curUser || curUser.role !== 'sales') return;
+  if(!myLat || !myLng) return;
+  const sp = spList.find(s => s.id === curUser.id);
+  const row = {
+    id: curUser.id,
+    sp_name: curUser.name,
+    lat: myLat,
+    lng: myLng,
+    accuracy: 0,
+    checked_in: true,
+    cin: sp?.cin || new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+    route: JSON.stringify(sp?.route || []),
+    visits: sp?.visits || 0,
+    km: sp?.km || '0 km',
+    updated_at: new Date().toISOString()
+  };
+  try { await sbUpsert('sp_locations', row); }
+  catch(e){ console.warn('Live location push failed', e); }
+}
+
+function startLiveLocationPush(){
+  if(liveLocInterval) return; // already running
+  pushLiveLocation(); // push immediately on punch-in
+  liveLocInterval = setInterval(pushLiveLocation, 30000); // then every 30s
+}
+
+function stopLiveLocationPush(){
+  if(liveLocInterval){ clearInterval(liveLocInterval); liveLocInterval = null; }
+  // Mark offline in Supabase
+  if(!supaReady || !curUser || curUser.role !== 'sales') return;
+  const sp = spList.find(s => s.id === curUser.id);
+  sbUpsert('sp_locations', {
+    id: curUser.id,
+    sp_name: curUser.name,
+    lat: myLat || null,
+    lng: myLng || null,
+    accuracy: 0,
+    checked_in: false,
+    cin: sp?.cin || '—',
+    route: JSON.stringify(sp?.route || []),
+    visits: sp?.visits || 0,
+    km: sp?.km || '0 km',
+    updated_at: new Date().toISOString()
+  }).catch(() => {});
+}
+
+// Load latest SP live positions when admin opens app
+async function loadSpLiveLocations(){
+  if(!supaReady) return;
+  try {
+    const { data } = await sb.from('sp_locations').select('*');
+    if(!data || !data.length) return;
+    data.forEach(r => {
+      const sp = spList.find(s => s.id === r.id);
+      if(!sp) return;
+      // Only apply data from current work day (within last 12 hours)
+      const ageHours = (Date.now() - new Date(r.updated_at)) / 3600000;
+      if(ageHours > 12) return;
+      sp.checkedIn = r.checked_in || false;
+      sp.cin = r.cin || '—';
+      sp.visits = r.visits || 0;
+      sp.km = r.km || '0 km';
+      if(r.lat) sp.liveLat = r.lat;
+      if(r.lng) sp.liveLng = r.lng;
+      if(r.route){ try{ sp.route = JSON.parse(r.route); } catch(e){} }
+    });
+    normalizeSpRoutes();
+  } catch(e){ console.warn('loadSpLiveLocations error', e); }
+}
 
 // ============================================================
 // LOGIN / LOGOUT
@@ -1184,6 +1325,7 @@ function doLogout(){
   if(visitMap){visitMap.remove();visitMap=null;}
   if(offPreviewMap){offPreviewMap.remove();offPreviewMap=null;}
   dL=[]; tL=[]; spvL=[];
+  stopLiveLocationPush();
   // Stop all GPS watchers
   if(gpsWatcher !== null){navigator.geolocation.clearWatch(gpsWatcher);gpsWatcher=null;}
   if(proximityWatcher){navigator.geolocation.clearWatch(proximityWatcher);proximityWatcher=null;}
@@ -1244,6 +1386,10 @@ function doPunchIn(){
   // Re-request GPS on punch-in (critical for mobile — user gesture triggers permission dialog)
   if(!myLat && gpsWatcher === null) startGPS();
 
+  // Start pushing live location to Supabase every 30s
+  // Note: the GPS watchPosition handler also calls pushLiveLocation() on each GPS fix
+  // so the first push happens as soon as GPS lock is acquired
+  startLiveLocationPush();
   startApp();
   toast('✅ Punched In! Have a productive day.');
 }
@@ -1257,6 +1403,7 @@ function doPunchOut(){
   document.getElementById('punchbar').classList.remove('show');
   document.getElementById('app').classList.remove('show');
   document.getElementById('punchScreen').classList.add('visible');
+  stopLiveLocationPush();
   if(visitMap){visitMap.remove();visitMap=null;}
   if(tMap){tMap.remove();tMap=null;}
   tMapLiveDot = null;
@@ -1873,7 +2020,7 @@ function renderMapPage(pc){
     <div class="g2">
       <div class="card">
         <div class="card-h"><span class="card-t">👥 Agent Status</span></div>
-        ${spList.map((s,i)=>`<div class="trow"><div class="tdot" style="background:${s.checkedIn?C[i]:'var(--mut)'}"></div><div style="flex:1"><div style="font-weight:700;font-size:13px">${s.name}</div><div style="font-size:11px;color:var(--mut)">${s.zone} • ${s.visits} visits • ${s.orders} orders</div></div><span class="badge ${s.checkedIn?'b-grn':'b-red'}">${s.checkedIn?'LIVE':'Offline'}</span></div>`).join('')}
+        <div id="agentStatusList">${spList.map((s,i)=>`<div class="trow"><div class="tdot" style="background:${s.checkedIn?C[i]:'var(--mut)'}"></div><div style="flex:1"><div style="font-weight:700;font-size:13px">${s.name}</div><div style="font-size:11px;color:var(--mut)">${s.zone} • ${s.visits} visits • ${s.km||'0 km'}</div></div><span class="badge ${s.checkedIn?'b-grn':'b-red'}">${s.checkedIn?'● LIVE':'Offline'}</span></div>`).join('')}</div>
       </div>
       <div class="card">
         <div class="card-h"><span class="card-t">🛣️ Route Timeline</span><span id="rtAgentName" style="font-size:12px;color:var(--mut)"></span></div>
@@ -1915,30 +2062,91 @@ function renderMyMapPage(pc){
 function initDashMap(){
   const el=document.getElementById('dashMap'); if(!el)return;
   if(dMap){dMap.invalidateSize();refreshDashMap();return;}
-  const defLat=myLat||20.5937, defLng=myLng||78.9629; // India center fallback
-  dMap=L.map('dashMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],myLat?12:5);
+  // Center on office location (not admin's own GPS which may be elsewhere)
+  const defLat = officeLat || 20.5937;
+  const defLng = officeLng || 78.9629;
+  const zoom   = officeLat ? 13 : 5;
+  dMap=L.map('dashMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],zoom);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CartoDB'}).addTo(dMap);
   refreshDashMap();
 }
 function refreshDashMap(){
-  if(!dMap)return; dL.forEach(l=>l.remove()); dL=[];
-  const fv=document.getElementById('mapFilter')?.value||'all';
-  const list=fv==='all'?spList.map((s,i)=>({s,i})):[{s:spList[+fv],i:+fv}];
-  list.forEach(({s,i})=>{
-    if(!s.checkedIn&&fv==='all')return;
-    const col=C[i%C.length], pts=s.route.map(r=>[r.lat,r.lng]);
-    dL.push(L.polyline(pts,{color:col,weight:3,opacity:.75,dashArray:'7,4'}).addTo(dMap));
-    let vn=0;
-    s.route.forEach(r=>{
+  if(!dMap) return;
+  // Clear all existing layers
+  dL.forEach(l=>l.remove()); dL=[];
+  adminLiveMarkers = {}; // reset live marker refs
+
+  const fv = document.getElementById('mapFilter')?.value || 'all';
+  const list = fv==='all' ? spList.map((s,i)=>({s,i})) : [{s:spList[+fv], i:+fv}];
+  const allPts = []; // collect all points to auto-fit bounds
+
+  list.forEach(({s,i}) => {
+    const isActive = s.checkedIn;
+    if(!isActive && fv==='all') return; // skip offline agents in all-agents view
+
+    const col = C[i%C.length];
+
+    // ── Route line (visits only, not the live dot) ──
+    const routePts = (s.route||[]).filter(r => r.lat && r.lng && r.t !== 'cur');
+    if(routePts.length > 1){
+      const line = L.polyline(routePts.map(r=>[r.lat,r.lng]),{color:col,weight:3,opacity:.7,dashArray:'7,4'}).addTo(dMap);
+      dL.push(line);
+    }
+
+    // ── Route markers (office start + numbered visits) ──
+    let vn = 0;
+    routePts.forEach(r => {
+      // Normalize start point to office coords
+      const lat = (r.t==='start' && officeLat) ? officeLat : r.lat;
+      const lng = (r.t==='start' && officeLng) ? officeLng : r.lng;
       let ic;
-      if(r.t==='start'){ic=L.divIcon({html:`<div style="background:#111827;border:2px solid ${col};border-radius:8px;padding:2px 7px;font-size:10px;font-weight:700;color:${col};white-space:nowrap">🏠 ${s.name.split(' ')[0]}</div>`,className:'',iconSize:[80,22],iconAnchor:[40,11]});}
-      else if(r.t==='visit'){vn++;ic=L.divIcon({html:`<div style="width:26px;height:26px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#000">${vn}</div>`,className:'',iconSize:[26,26],iconAnchor:[13,13]});}
-      else{ic=L.divIcon({html:`<div style="width:14px;height:14px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 0 0 5px ${col}44"></div>`,className:'',iconSize:[14,14],iconAnchor:[7,7]});}
-      dL.push(L.marker([r.lat,r.lng],{icon:ic}).addTo(dMap).bindPopup(`<b>${r.lbl}</b><br><small>👤 ${s.name} • 🕐 ${r.tm}${r.t==='visit'?' • Visit #'+vn:''}</small>`));
+      if(r.t === 'start'){
+        ic = L.divIcon({html:`<div style="background:#111827;border:2px solid ${col};border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;color:${col};white-space:nowrap">🏢 ${officeName||'Office'}</div>`,className:'',iconSize:[90,22],iconAnchor:[45,11]});
+      } else if(r.t === 'visit'){
+        vn++;
+        ic = L.divIcon({html:`<div style="width:26px;height:26px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#000">${vn}</div>`,className:'',iconSize:[26,26],iconAnchor:[13,13]});
+      }
+      if(ic){
+        const mk = L.marker([lat,lng],{icon:ic}).addTo(dMap).bindPopup(`<b>${r.lbl}</b><br><small>👤 ${s.name} • 🕐 ${r.tm}${r.t==='visit'?' • Visit #'+vn:''}</small>`);
+        dL.push(mk);
+        allPts.push([lat,lng]);
+      }
     });
+
+    // ── Live GPS dot (from sp_locations, updated in real-time) ──
+    if(s.liveLat && s.liveLng){
+      const liveDotHtml = `<div style="position:relative;width:40px;height:40px">
+        <div style="position:absolute;inset:0;border-radius:50%;background:${col};opacity:.18;animation:blink 1.5s infinite"></div>
+        <div style="position:absolute;top:7px;left:7px;width:26px;height:26px;background:#111827;border:2.5px solid ${col};border-radius:16px;display:flex;align-items:center;justify-content:center">
+          <div style="width:10px;height:10px;border-radius:50%;background:${col}"></div>
+        </div>
+        <div style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:#111827;border:1.5px solid ${col};border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;color:${col};white-space:nowrap">${s.name.split(' ')[0]}</div>
+      </div>`;
+      const liveIcon = L.divIcon({html:liveDotHtml, className:'', iconSize:[40,40], iconAnchor:[20,20]});
+      const liveMk = L.marker([s.liveLat, s.liveLng], {icon:liveIcon, zIndexOffset:2000})
+        .addTo(dMap)
+        .bindPopup(`<b>🔵 ${s.name} — LIVE</b><br>📍 ${s.liveLat.toFixed(5)}, ${s.liveLng.toFixed(5)}<br>🕐 Checked in: ${s.cin} • ${s.visits} visits • ${s.km}`);
+      dL.push(liveMk);
+      adminLiveMarkers[s.id] = liveMk;
+      allPts.push([s.liveLat, s.liveLng]);
+    }
   });
-  if(fv==='all'){const defLat=myLat||20.5937,defLng=myLng||78.9629;dMap.setView([defLat,defLng],myLat?12:5);}
-  else{const cur=spList[+fv].route[spList[+fv].route.length-1]; dMap.setView([cur.lat,cur.lng],14);}
+
+  // Auto-fit or center
+  if(fv === 'all'){
+    if(allPts.length > 0){
+      dMap.fitBounds(L.latLngBounds(allPts), {padding:[40,40], maxZoom:15});
+    } else {
+      const defLat = officeLat||20.5937, defLng = officeLng||78.9629;
+      dMap.setView([defLat, defLng], officeLat?13:5);
+    }
+  } else {
+    const sp = spList[+fv];
+    const center = sp.liveLat ? [sp.liveLat, sp.liveLng]
+                  : sp.route?.length ? [sp.route[sp.route.length-1].lat, sp.route[sp.route.length-1].lng]
+                  : [officeLat||20.5937, officeLng||78.9629];
+    dMap.setView(center, 15);
+  }
 }
 function showRoute2(idx){
   selAgt=idx; const s=spList[idx], col=C[idx%C.length];
