@@ -290,12 +290,26 @@ select option{background:var(--sur2)}
       <div id="psUserName" style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700">—</div>
       <div id="psUserRole" style="font-size:12px;color:var(--mut);margin-top:3px">—</div>
     </div>
-    <div class="p-loc">
-      <div class="loc-dot" id="locDot"></div>
-      <span id="locTxt">Detecting location...</span>
+    <!-- GPS Permission Area -->
+    <div id="gpsArea" style="display:flex;flex-direction:column;gap:8px">
+      <div class="p-loc" id="locStatus">
+        <div class="loc-dot" id="locDot"></div>
+        <span id="locTxt" style="flex:1;line-height:1.4">Tap below to enable live location</span>
+      </div>
+      <!-- Primary GPS button — triggers permission dialog on mobile -->
+      <button id="gpsBtn" onclick="requestGPSPermission()" style="
+        background:rgba(16,185,129,.12);border:1.5px solid var(--grn);
+        color:var(--grn);border-radius:10px;padding:10px 14px;
+        font-size:13px;font-weight:700;font-family:'Inter',sans-serif;
+        cursor:pointer;width:100%;display:flex;align-items:center;
+        justify-content:center;gap:8px;transition:all .2s">
+        📍 Enable Live Location
+      </button>
     </div>
     <button class="p-btn" onclick="doPunchIn()">👆 &nbsp;PUNCH IN — Start Work</button>
-    <div style="text-align:center;font-size:11px;color:var(--mut)">App will open after Punch In</div>
+    <div style="text-align:center;font-size:11px;color:var(--mut)">
+      Enable location for live tracking — or punch in without it
+    </div>
   </div>
 </div>
 
@@ -901,9 +915,9 @@ async function sbSaveExpense(e){ if(!supaReady)return; const row={id:String(e.id
 async function sbSaveSP(s){ if(!supaReady)return; const row={id:s.id,name:s.name,pass:s.pass,mob:s.mob,zone:s.zone||'',status:s.status||'active',join_date:s.joinDate||'',orders:s.orders||0}; await sbUpsert('salespersons',row); }
 
 // ---------- Load all data from Supabase ----------
-async function loadFromSupabase(){
+async function loadFromSupabase(silent=false){
   if(!supaReady){ lsLoad(); return; }
-  showDbLoader(true);
+  if(!silent) showDbLoader(true);
   try{
     const [custs,ords,prods,sps,exps] = await Promise.all([
       sbGet('customers'), sbGet('orders'), sbGet('products'),
@@ -931,7 +945,7 @@ async function loadFromSupabase(){
     // Load transport from Supabase
     try{ const {data:trData}=await sb.from('transport').select('*'); if(trData&&trData.length) transportList=trData.map(r=>({id:r.id,name:r.name,contact:r.contact||'',mob:r.mob||'',type:r.type||'Courier',city:r.city||'',notes:r.notes||'',status:r.status||'active'})); }catch(e){}
     lsSave();
-    toast('☁️ Data loaded from Supabase!','var(--grn)');
+    if(!silent) toast('☁️ Data loaded from Supabase!','var(--grn)');
     await loadOfficeFromSupabase();
     // Normalize all SP route start points to match current office location
     if(officeLat && officeLng){
@@ -951,8 +965,8 @@ async function loadFromSupabase(){
       if(apd&&apd.value) localStorage.setItem('dcrm_admin_pass',apd.value);
     }catch(e){}
     startRealtime();
-  }catch(e){ console.error('Supabase load error',e); lsLoad(); toast('Supabase error — using local data','var(--acc)'); }
-  showDbLoader(false);
+  }catch(e){ console.error('Supabase load error',e); lsLoad(); if(!silent) toast('Supabase error — using local data','var(--acc)'); }
+  if(!silent) showDbLoader(false);
 }
 
 function showDbLoader(show){
@@ -1136,8 +1150,17 @@ function handleRealtimeSP(payload){
     if(payload.eventType==='DELETE'){ spList=spList.filter(s=>s.id!==r.id); }
     else{
       const idx=spList.findIndex(s=>s.id===r.id);
-      if(idx>-1){spList[idx].name=r.name;spList[idx].pass=r.pass;spList[idx].status=r.status;spList[idx].zone=r.zone;}
-      else{ spList.push({id:r.id,name:r.name,pass:r.pass,mob:r.mob||'',zone:r.zone||'',status:r.status,orders:0,checkedIn:false,cin:'—',visits:0,km:'0 km',pd:0,route:[]}); }
+      if(idx>-1){
+        // Preserve live state — don't overwrite checkedIn/visits/km/route from salespersons table
+        // (those come from sp_locations which has the real-time values)
+        spList[idx].name=r.name;
+        spList[idx].pass=r.pass;
+        spList[idx].status=r.status;
+        spList[idx].zone=r.zone;
+        spList[idx].orders=r.orders||spList[idx].orders||0;
+      } else {
+        spList.push({id:r.id,name:r.name,pass:r.pass,mob:r.mob||'',zone:r.zone||'',status:r.status,orders:r.orders||0,checkedIn:false,cin:'—',visits:0,km:'0 km',pd:0,route:[]});
+      }
     }
   }
   lsSave();
@@ -1170,11 +1193,16 @@ function startGPS(){
     pos => {
       myLat = pos.coords.latitude;
       myLng = pos.coords.longitude;
+      const acc = Math.round(pos.coords.accuracy);
       const d = document.getElementById('locDot');
       if(d) d.className = 'loc-dot on';
       const t = document.getElementById('locTxt');
-      if(t) t.textContent = 'GPS: ' + myLat.toFixed(5) + ', ' + myLng.toFixed(5) +
-        ' (±' + Math.round(pos.coords.accuracy) + 'm)';
+      if(t) t.textContent = '✅ GPS active: ±' + acc + 'm accuracy';
+      // Hide the GPS enable button once we have a fix
+      const btn = document.getElementById('gpsBtn');
+      if(btn) btn.style.display = 'none';
+      const guide = document.getElementById('gpsGuide');
+      if(guide) guide.remove();
       // Update live dot on My Location map if open
       updateMyMapLiveDot();
       // Push to Supabase if salesperson and punched in
@@ -1188,15 +1216,66 @@ function startGPS(){
       const msgs = {1:'Permission denied — please allow location access in browser settings',
                     2:'GPS signal unavailable', 3:'GPS timed out — retrying...'};
       if(te) te.textContent = '⚠️ ' + (msgs[err.code]||'Location unavailable');
-      // On permission denied, stop watching
-      if(err.code === 1){ navigator.geolocation.clearWatch(gpsWatcher); gpsWatcher = null; }
+      // On any error, null out watcher so next user gesture can retry
+      navigator.geolocation.clearWatch(gpsWatcher); gpsWatcher = null;
+      // On timeout: auto-retry once (GPS sometimes needs a second try)
+      if(err.code === 3){ setTimeout(startGPS, 3000); }
     },
     opts
   );
 }
 
-// Start GPS as soon as page loads (desktop grants silently; mobile prompts on interaction)
-startGPS();
+// GPS is NOT started at page load — only on explicit user action (punch-in button)
+// This ensures mobile browsers show the permission dialog at the right moment
+
+// ============================================================
+// GPS PERMISSION REQUEST — called from user gesture (button tap)
+// ============================================================
+function requestGPSPermission(){
+  const btn = document.getElementById('gpsBtn');
+  const dot = document.getElementById('locDot');
+  const txt = document.getElementById('locTxt');
+  if(btn){ btn.textContent = '📡 Requesting...'; btn.disabled = true; }
+  if(dot) dot.className = 'loc-dot';
+  if(txt) txt.textContent = 'Requesting GPS permission...';
+
+  // Check current permission state first (where supported)
+  if(navigator.permissions && navigator.permissions.query){
+    navigator.permissions.query({name:'geolocation'}).then(result => {
+      if(result.state === 'denied'){
+        // Permission permanently denied — show actionable guide
+        if(txt) txt.textContent = '🔒 Location blocked — see instructions below';
+        showGPSInstructions();
+        if(btn){ btn.textContent = '📍 Enable Live Location'; btn.disabled = false; }
+        return;
+      }
+      // 'granted' or 'prompt' — start GPS
+      startGPS();
+      if(btn){ btn.style.display = 'none'; } // hide once GPS starts
+    }).catch(()=>{ startGPS(); if(btn) btn.style.display='none'; });
+  } else {
+    // Permissions API not supported — just try startGPS directly
+    startGPS();
+    if(btn){ btn.style.display = 'none'; }
+  }
+}
+
+function showGPSInstructions(){
+  // Remove existing if any
+  const existing = document.getElementById('gpsGuide');
+  if(existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'gpsGuide';
+  el.style.cssText = 'background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--txt);line-height:1.6;margin-top:4px';
+  el.innerHTML = `
+    <div style="font-weight:700;color:var(--acc);margin-bottom:6px">📍 How to enable location:</div>
+    <div><b>Chrome (Android):</b> Tap 🔒 in address bar → Site Settings → Location → Allow</div>
+    <div style="margin-top:4px"><b>Safari (iPhone):</b> Settings → Safari → Location → Allow</div>
+    <div style="margin-top:4px"><b>Or:</b> Phone Settings → Apps → Browser → Permissions → Location</div>
+    <div style="margin-top:6px;color:var(--mut)">After allowing, refresh the page and tap the button again.</div>`;
+  const gpsArea = document.getElementById('gpsArea');
+  if(gpsArea) gpsArea.appendChild(el);
+}
 
 // ============================================================
 // LIVE LOCATION PUSH — Salesperson → Supabase every 30s
@@ -1473,8 +1552,9 @@ function doPunchIn(){
     }
   }, 1000);
 
-  // Re-request GPS on punch-in (critical for mobile — user gesture triggers permission dialog)
-  if(!myLat && gpsWatcher === null) startGPS();
+  // Always start GPS on punch-in — this is a user gesture so mobile shows dialog
+  // If already running, startGPS() returns early (gpsWatcher !== null guard)
+  startGPS();
 
   // Start pushing live location to Supabase every 30s
   // Note: the GPS watchPosition handler also calls pushLiveLocation() on each GPS fix
@@ -1539,8 +1619,15 @@ function startApp(){
   const today=new Date().toISOString().split('T')[0];
   ['o-date','d-date'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=today;});
   // Init Supabase + load fresh data
-  initSupabase();
-  loadFromSupabase().then(()=>{ updS(); updBadges(); go('dash'); });
+  // Only init+load if not already done (session restore pre-loads)
+  if(!supaReady){ initSupabase(); }
+  if(!supaReady){
+    loadFromSupabase().then(()=>{ updS(); updBadges(); go('dash'); });
+  } else {
+    updS(); updBadges(); go('dash');
+    // Refresh data quietly in background
+    loadFromSupabase(true).then(()=>{ updS(); updBadges(); if(currentPage==='dash') renderPage('dash'); });
+  }
 }
 
 function buildNav(){
@@ -2173,8 +2260,8 @@ function renderMyMapPage(pc){
 
 function initDashMap(){
   const el=document.getElementById('dashMap'); if(!el)return;
-  if(dMap){dMap.invalidateSize();refreshDashMap();return;}
-  // Center on office location (not admin's own GPS which may be elsewhere)
+  // Always destroy and recreate — avoids blank map on re-navigation
+  if(dMap){ dL.forEach(l=>l.remove()); dL=[]; adminLiveMarkers={}; dMap.remove(); dMap=null; }
   const defLat = officeLat || 20.5937;
   const defLng = officeLng || 78.9629;
   const zoom   = officeLat ? 13 : 5;
@@ -2193,8 +2280,9 @@ function refreshDashMap(){
   const allPts = []; // collect all points to auto-fit bounds
 
   list.forEach(({s,i}) => {
-    const isActive = s.checkedIn;
-    if(!isActive && fv==='all') return; // skip offline agents in all-agents view
+    // Show agent if: checked in OR has live GPS position (liveLat means they pushed recently)
+    const isActive = s.checkedIn || (s.liveLat && s.liveLng);
+    if(!isActive && fv==='all') return; // skip truly offline agents in all-agents view
 
     const col = C[i%C.length];
 
@@ -3145,8 +3233,10 @@ let spvMap=null, spvL=[];
 function initSPVisitMap(){
   const el=document.getElementById('spVisitMap'); if(!el)return;
   if(spvMap){spvMap.remove();spvMap=null;}
-  const defLat=myLat||20.5937, defLng=myLng||78.9629;
-  spvMap=L.map('spVisitMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],myLat?11:5);
+  // Always destroy and recreate — avoids blank map
+  if(spvMap){ spvL.forEach(l=>l.remove()); spvL=[]; spvMap.remove(); spvMap=null; }
+  const defLat=officeLat||20.5937, defLng=officeLng||78.9629;
+  spvMap=L.map('spVisitMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],officeLat?12:5);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CartoDB'}).addTo(spvMap);
   refreshSPMap();
 }
@@ -3161,20 +3251,30 @@ function refreshSPMap(){
   list.forEach(({s,i})=>{
     const col=C[i%C.length];
     if(!s.route||!s.route.length)return;
-    // Draw polyline route
-    const pts=s.route.map(r=>[r.lat,r.lng]);
+    // Normalize start point to office coords before plotting
+    const route2 = s.route.map((r,ri) => {
+      if(ri===0 && r.t==='start' && officeLat && officeLng)
+        return {...r, lat:officeLat, lng:officeLng, lbl:officeName||'Office'};
+      return r;
+    });
+    const pts=route2.map(r=>[r.lat,r.lng]);
     allPts.push(...pts);
     spvL.push(L.polyline(pts,{color:col,weight:3,opacity:.7,dashArray:'8,5'}).addTo(spvMap));
+    // Replace s.route reference in forEach below with route2
+    s._displayRoute = route2;
 
     // Number each visit stop
     let visitNum=0;
-    s.route.forEach((r,ri)=>{
+    (s._displayRoute||s.route).forEach((r,ri)=>{
       let icon;
       if(r.t==='start'){
-        // Start icon
+        // Normalize start point to current office coords
+        const startLat2 = officeLat || r.lat;
+        const startLng2 = officeLng || r.lng;
+        r.lat = startLat2; r.lng = startLng2;
         icon=L.divIcon({
-          html:`<div style="background:#1a2235;border:2px solid ${col};border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;color:${col};white-space:nowrap">🏠 ${s.name.split(' ')[0]}</div>`,
-          className:'',iconSize:[80,24],iconAnchor:[40,12]
+          html:`<div style="background:#111827;border:2px solid ${col};border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;color:${col};white-space:nowrap">🏢 ${officeName||'Office'}</div>`,
+          className:'',iconSize:[90,24],iconAnchor:[45,12]
         });
       } else if(r.t==='visit'){
         visitNum++;
@@ -3632,7 +3732,7 @@ async function tryRestoreSession(){
     if(!s||!s.id||!s.role) return false;
     // Init Supabase first so spList is populated
     initSupabase();
-    await loadFromSupabase();
+    await loadFromSupabase(true); // silent=true: no banner or toast on refresh restore
     // Verify user still exists and is active
     if(s.role==='admin'){
       curUser={id:'admin',name:'Admin',role:'admin'};
@@ -3658,7 +3758,10 @@ async function tryRestoreSession(){
         document.getElementById('wTimer').textContent=pad(Math.floor(d/3600))+':'+pad(Math.floor(d%3600/60))+':'+pad(d%60);
       },1000);
       startLiveLocationPush();
+      // Resume GPS tracking after page refresh (already have permission from before)
+      startGPS();
     }
+    // Show app immediately — don't make user watch loading screen
     document.getElementById('loginScreen').style.display='none';
     startApp();
     return true;
@@ -3976,8 +4079,19 @@ function startProximityTracking(){
     if(sel && sel.value) checkProximity(sel.value);
 
   }, err => {
-    document.getElementById('ciLocDot').className = 'loc-dot';
-    document.getElementById('ciLocTxt').textContent = '⚠️ GPS unavailable — ' + err.message;
+    navigator.geolocation.clearWatch(proximityWatcher); proximityWatcher = null;
+    const ciDot = document.getElementById('ciLocDot');
+    const ciTxt = document.getElementById('ciLocTxt');
+    if(ciDot) ciDot.className = 'loc-dot';
+    if(err.code === 1){
+      if(ciTxt) ciTxt.innerHTML = '🔒 Location blocked — tap 🔒 in browser address bar → Allow Location, then refresh';
+    } else if(err.code === 2){
+      if(ciTxt) ciTxt.textContent = '⚠️ GPS signal weak — move near a window or outdoors';
+      setTimeout(startProximityTracking, 5000);
+    } else {
+      if(ciTxt) ciTxt.textContent = '⚠️ GPS timed out — retrying...';
+      setTimeout(startProximityTracking, 3000);
+    }
   }, opts);
 }
 
@@ -4166,8 +4280,11 @@ function playProximitySound(type){
 
 function initVisitMap(sp){
   const el=document.getElementById('visitMap'); if(!el)return;
-  if(visitMap){visitMap.remove();visitMap=null;}
-  const defLat=officeLat||myLat||20.5937, defLng=officeLng||myLng||78.9629;
+  // Always recreate to avoid blank map
+  if(visitMap){ visitMap.remove(); visitMap=null; visitMarker=null; }
+  const defLat = myLat||officeLat||20.5937;
+  const defLng = myLng||officeLng||78.9629;
+  // Center on GPS if available, else office
   visitMap=L.map('visitMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],15);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(visitMap);
   if(sp&&sp.route&&sp.route.length>1){
