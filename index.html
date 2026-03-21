@@ -1065,7 +1065,7 @@ function handleRealtimeLiveLocation(payload){
 
   // ── Event notifications (punch-in / punch-out) ──
   // These use id format "spid_event" to distinguish from GPS rows
-  if(r.id && r.id.endsWith('_event')){
+  if(r.id && (r.id.endsWith('_event') || r.id.includes('_ev_'))){
     if(curUser && curUser.role === 'admin'){
       const spName = r.sp_name || 'A salesperson';
       const t = r.cin || new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
@@ -1099,6 +1099,15 @@ function handleRealtimeLiveLocation(payload){
     updBadges(); updS();
     if(currentPage === 'map' || currentPage === 'dash') updateAdminMapMarker(sp);
     if(currentPage === 'map') updateAgentStatusPanel();
+    // Refresh attendance/salespersons pages live
+    if(currentPage === 'salespersons') renderPage('salespersons');
+    if(currentPage === 'attendance') renderPage('attendance');
+    if(currentPage === 'reports') renderPage('reports');
+  }
+  // If this SP is viewing their own attendance page, refresh it too
+  if(curUser && curUser.role === 'sales' && curUser.id === sp.id){
+    if(currentPage === 'attendance') renderPage('attendance');
+    if(currentPage === 'dash') renderPage('dash');
   }
 }
 
@@ -1290,7 +1299,7 @@ async function pushLiveLocation(){
     sp_name: curUser.name,
     lat: myLat,
     lng: myLng,
-    accuracy: deviceId, // reuse accuracy field to store device ID
+    accuracy: 0,
     checked_in: true,
     cin: sp?.cin || new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
     route: JSON.stringify(sp?.route || []),
@@ -1306,6 +1315,11 @@ function startLiveLocationPush(){
   if(liveLocInterval) return; // already running
   pushLiveLocation(); // push immediately on punch-in
   liveLocInterval = setInterval(pushLiveLocation, 30000); // then every 30s
+  // Register this device as the active session for this SP
+  if(supaReady && curUser && curUser.role==='sales'){
+    const tokenKey = 'sp_token_'+curUser.id;
+    sb.from('settings').upsert({key:tokenKey,value:JSON.stringify({device:deviceId,ts:new Date().toISOString()})},{onConflict:'key'}).catch(()=>{});
+  }
   // Start session integrity check every 60s
   sessionCheckInterval = setInterval(checkSessionIntegrity, 60000);
 }
@@ -1313,8 +1327,16 @@ function startLiveLocationPush(){
 async function checkSessionIntegrity(){
   if(!supaReady || !curUser || curUser.role !== 'sales') return;
   try{
-    const {data}=await sb.from('sp_locations').select('accuracy,checked_in').eq('id',curUser.id).maybeSingle();
-    if(data && data.checked_in && data.accuracy && data.accuracy !== deviceId){
+    const tokenKey2 = 'sp_token_'+curUser.id;
+    const {data}=await sb.from('settings').select('value').eq('key',tokenKey2).maybeSingle();
+    if(data && data.value){
+      const parsed2=JSON.parse(data.value);
+      if(parsed2.device && parsed2.device !== deviceId && parsed2.ts){
+        const ageMin2=(Date.now()-new Date(parsed2.ts))/60000;
+        if(ageMin2 > 10) return; // stale token — no action
+      } else { return; }
+    } else { return; }
+    if(true){
       // Another device logged in and is actively pushing — force logout
       clearSession();
       clearInterval(liveLocInterval); liveLocInterval=null;
@@ -1338,6 +1360,11 @@ async function checkSessionIntegrity(){
 function stopLiveLocationPush(){
   if(liveLocInterval){ clearInterval(liveLocInterval); liveLocInterval = null; }
   if(sessionCheckInterval){ clearInterval(sessionCheckInterval); sessionCheckInterval = null; }
+  // Clear device token
+  if(supaReady && curUser && curUser.role==='sales'){
+    const tokenKey = 'sp_token_'+curUser.id;
+    sb.from('settings').upsert({key:tokenKey,value:JSON.stringify({device:'',ts:''})},{onConflict:'key'}).catch(()=>{});
+  }
   // Mark offline in Supabase
   if(!supaReady || !curUser || curUser.role !== 'sales') return;
   const sp = spList.find(s => s.id === curUser.id);
@@ -1431,20 +1458,24 @@ async function doLogin(){
   const sp=spList.find(s=>s.id===id&&s.status==='active'&&(s.pass===hashed||(!isHashed(s.pass)&&s.pass===pass)));
   if(sp){
     if(!isHashed(sp.pass)){ sp.pass=hashed; sbSaveSP(sp); lsSave(); }
-    // Single device check: see if this SP is already logged in on another device
+    // Single device check: see if this SP is active on another device
     if(supaReady){
       try{
-        const {data:locRow}=await sb.from('sp_locations').select('accuracy,checked_in,updated_at').eq('id',sp.id).maybeSingle();
-        if(locRow && locRow.checked_in && locRow.accuracy && locRow.accuracy !== deviceId){
-          const ageMin=(Date.now()-new Date(locRow.updated_at))/60000;
-          if(ageMin < 10){ // active within last 10 minutes = genuinely on another device
-            err.style.display='block';
-            err.style.color='var(--acc)';
-            err.style.background='rgba(245,158,11,.1)';
-            err.style.borderColor='rgba(245,158,11,.3)';
-            err.innerHTML='⚠️ Already logged in on another device.<br><small>Ask that device to punch out first, or wait 10 minutes.</small>';
-            if(btn){btn.textContent='🚀 Login';btn.disabled=false;}
-            return;
+        const tokenKey = 'sp_token_'+sp.id;
+        const {data:tok}=await sb.from('settings').select('value').eq('key',tokenKey).maybeSingle();
+        if(tok && tok.value){
+          const parsed = JSON.parse(tok.value);
+          if(parsed.device !== deviceId && parsed.ts){
+            const ageMin=(Date.now()-new Date(parsed.ts))/60000;
+            if(ageMin < 10){
+              err.style.display='block';
+              err.style.color='var(--acc)';
+              err.style.background='rgba(245,158,11,.1)';
+              err.style.borderColor='rgba(245,158,11,.3)';
+              err.innerHTML='⚠️ Already logged in on another device.<br><small>Ask that device to punch out first, or wait 10 minutes.</small>';
+              if(btn){btn.textContent='🚀 Login';btn.disabled=false;}
+              return;
+            }
           }
         }
       }catch(e){}
@@ -1518,6 +1549,9 @@ function doPunchIn(){
   if(sp){
     sp.checkedIn = true;
     sp.cin = cinTime;
+    // Mark today as Present in attendance
+    if(!att[curUser.id]) att[curUser.id]={};
+    att[curUser.id][new Date().getDate()] = 'pr';
     // Set/update route start point to office location (not GPS — GPS is moving, office is fixed)
     const offLat = officeLat || 20.5937;
     const offLng = officeLng || 78.9629;
@@ -1560,18 +1594,24 @@ function doPunchIn(){
   // Note: the GPS watchPosition handler also calls pushLiveLocation() on each GPS fix
   // so the first push happens as soon as GPS lock is acquired
   startLiveLocationPush();
-  // Notify admin of punch-in via sp_locations event field
-  if(supaReady){
+  startApp();
+  // Notify admin of punch-in — use unique ID to guarantee INSERT (not UPDATE)
+  // INSERT always fires realtime; UPDATE may be missed if admin just connected
+  setTimeout(()=>{
+    if(!supaReady) return;
     const cinTime2=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-    sbUpsert('sp_locations',{
-      id:curUser.id+'_event', sp_name:curUser.name,
+    const evId = curUser.id+'_ev_'+Date.now(); // unique ID = always INSERT
+    sb.from('sp_locations').insert({
+      id:evId, sp_name:curUser.name,
       lat:myLat||null, lng:myLng||null, accuracy:0,
       checked_in:true, cin:cinTime2,
-      route:JSON.stringify([]), visits:0, km:'0 km',
+      route:'[]', visits:0, km:'0 km',
       updated_at:new Date().toISOString()
+    }).then(()=>{
+      // Delete after 30s to keep table clean
+      setTimeout(()=>sbDelete('sp_locations',evId),30000);
     }).catch(()=>{});
-  }
-  startApp();
+  }, 1500);
   toast('✅ Punched In! Have a productive day.');
 }
 
@@ -1585,16 +1625,17 @@ function doPunchOut(){
   document.getElementById('app').classList.remove('show');
   document.getElementById('punchScreen').classList.add('visible');
   stopLiveLocationPush();
-  // Notify admin of punch-out
+  // Notify admin of punch-out via INSERT (guarantees realtime fires)
   if(supaReady && curUser){
     const outTime=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-    sbUpsert('sp_locations',{
-      id:curUser.id+'_event', sp_name:curUser.name,
+    const evId2 = curUser.id+'_ev_'+Date.now();
+    sb.from('sp_locations').insert({
+      id:evId2, sp_name:curUser.name,
       lat:myLat||null, lng:myLng||null, accuracy:0,
       checked_in:false, cin:outTime,
-      route:JSON.stringify([]), visits:0, km:'0 km',
+      route:'[]', visits:0, km:'0 km',
       updated_at:new Date().toISOString()
-    }).catch(()=>{});
+    }).then(()=>{ setTimeout(()=>sbDelete('sp_locations',evId2),30000); }).catch(()=>{});
   }
   if(visitMap){visitMap.remove();visitMap=null;}
   if(tMap){tMap.remove();tMap=null;}
@@ -4287,19 +4328,38 @@ function initVisitMap(sp){
   // Center on GPS if available, else office
   visitMap=L.map('visitMap',{zoomControl:true,attributionControl:false}).setView([defLat,defLng],15);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(visitMap);
-  if(sp&&sp.route&&sp.route.length>1){
-    const col='#f59e0b';
-    L.polyline(sp.route.map(r=>[r.lat,r.lng]),{color:col,weight:3,opacity:.8}).addTo(visitMap);
+  const col = '#f59e0b';
+
+  // ── Always draw office marker from officeLat/officeLng (not from route) ──
+  const offLat = officeLat || 20.5937;
+  const offLng = officeLng || 78.9629;
+  const offIcon = L.divIcon({
+    html:`<div style="background:#111827;border:2.5px solid ${col};border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;color:${col};white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.5)">🏢 ${officeName||'Office'}</div>`,
+    className:'', iconSize:[130,26], iconAnchor:[65,13]
+  });
+  L.marker([offLat,offLng],{icon:offIcon}).addTo(visitMap)
+    .bindPopup(`<b>🏢 ${officeName||'Office'}</b><br><small>Starting point</small>`);
+
+  // ── Draw visit route and numbered stops ──
+  if(sp && sp.route && sp.route.length > 1){
+    const visitPts = sp.route.filter(r => r.t !== 'cur');
+    if(visitPts.length > 1)
+      L.polyline(visitPts.map(r=>[r.lat,r.lng]),{color:col,weight:3,opacity:.8,dashArray:'6,4'}).addTo(visitMap);
     let vn=0;
     sp.route.forEach(r=>{
-      if(r.t==='start'){
-        L.marker([r.lat,r.lng],{icon:L.divIcon({html:`<div style="background:#111827;border:2px solid ${col};border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;color:${col};white-space:nowrap">🏢 ${officeName}</div>`,className:'',iconSize:[120,24],iconAnchor:[60,12]})}).addTo(visitMap);
-      } else if(r.t==='visit'){
+      if(r.t==='visit'){
         vn++;
-        L.marker([r.lat,r.lng],{icon:L.divIcon({html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#000">${vn}</div>`,className:'',iconSize:[28,28],iconAnchor:[14,14]})}).bindPopup(`<b>${r.lbl}</b><br><small>${r.purpose||''} • ${r.tm}</small>`).addTo(visitMap);
+        L.marker([r.lat,r.lng],{
+          icon:L.divIcon({html:`<div style="width:28px;height:28px;border-radius:50%;background:${col};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#000">${vn}</div>`,
+          className:'',iconSize:[28,28],iconAnchor:[14,14]})
+        }).bindPopup(`<b>${r.lbl}</b><br><small>${r.purpose||''} • ${r.tm}</small>`).addTo(visitMap);
       }
     });
   }
+
+  // Center on GPS if available, else on office
+  if(myLat && myLng) visitMap.setView([myLat, myLng], 15);
+  else visitMap.setView([offLat, offLng], 15);
 }
 
 function updateVisitMapPosition(){
