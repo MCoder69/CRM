@@ -827,7 +827,7 @@ function normalizeSpRoutes(){
 // ============================================================
 // MULTI-USER: max 20 salespersons cap
 // ============================================================
-const MAX_USERS = 20;
+const MAX_USERS = 100;
 
 let spList=[];
 let dispatchList=[]; // Dispatch staff list (like spList but role=dispatch)
@@ -853,18 +853,21 @@ let expenses=[], expFiles=[];
 // Attendance — dynamic, based on real current month
 const att={};
 function genAtt(id){
-  att[id]={};
+  // Don't reset if we already have attendance data for this SP
+  if(!att[id]) att[id]={};
   const now=new Date();
   const today=now.getDate();
   const year=now.getFullYear();
   const month=now.getMonth();
   const daysInMonth=new Date(year,month+1,0).getDate();
   for(let d=1;d<=daysInMonth;d++){
+    // Never overwrite existing data for today (punch-in sets it to 'pr')
+    if(att[id][d] !== undefined) continue;
     const sun=new Date(year,month,d).getDay()===0;
-    if(d===today){att[id][d]='td';}
+    if(d===today){att[id][d]='td';} // today = not yet determined
     else if(sun){att[id][d]='sun';}
     else if(d>today){att[id][d]='fut';}
-    else{att[id][d]=Math.random()>.15?'pr':'ab';}
+    else{att[id][d]='ab';} // past days default to absent (real data comes from punch-in)
   }
 }
 spList.forEach(s=>genAtt(s.id)); genAtt('admin');
@@ -884,6 +887,7 @@ function lsSave(){
     localStorage.setItem('dcrm_expenses',JSON.stringify(expenses));
     localStorage.setItem('dcrm_dispatch_staff',JSON.stringify(dispatchList));
     localStorage.setItem('dcrm_transport',JSON.stringify(transportList));
+    localStorage.setItem('dcrm_att',JSON.stringify(att));
   }catch(e){}
 }
 function lsLoad(){
@@ -896,6 +900,7 @@ function lsLoad(){
     const ex=localStorage.getItem('dcrm_expenses'); if(ex)expenses=JSON.parse(ex);
     const ds=localStorage.getItem('dcrm_dispatch_staff'); if(ds)dispatchList=JSON.parse(ds);
     const tr=localStorage.getItem('dcrm_transport'); if(tr)transportList=JSON.parse(tr);
+    const at=localStorage.getItem('dcrm_att'); if(at){ const parsed=JSON.parse(at); Object.assign(att,parsed); }
   }catch(e){}
 }
 
@@ -991,7 +996,8 @@ setInterval(()=>{ lsSave(); },30000);
 let realtimeChannel = null;
 function startRealtime(){
   if(!supaReady||realtimeChannel) return;
-  realtimeChannel = sb.channel('dcrm-realtime')
+  realtimeChannel = sb.channel('dcrm-realtime', {config:{broadcast:{self:false}}})
+    // ── Database change subscriptions ──
     .on('postgres_changes',{event:'*',schema:'public',table:'orders'},payload=>{
       handleRealtimeOrder(payload);
     })
@@ -1007,12 +1013,86 @@ function startRealtime(){
     .on('postgres_changes',{event:'*',schema:'public',table:'sp_locations'},payload=>{
       handleRealtimeLiveLocation(payload);
     })
+    // ── Broadcast: instant punch-in/out notifications (no DB write needed) ──
+    .on('broadcast',{event:'punch'},payload=>{
+      handlePunchBroadcast(payload);
+    })
+    // ── Broadcast: live GPS position updates ──
+    .on('broadcast',{event:'gps'},payload=>{
+      handleGPSBroadcast(payload);
+    })
     .subscribe(status=>{
       const el=document.getElementById('sbSyncStatus');
       if(status==='SUBSCRIBED'){
         if(el){el.textContent='🟢 Live Sync Active';el.style.color='var(--grn)';}
+      } else if(status==='CHANNEL_ERROR'){
+        if(el){el.textContent='⚠️ Sync error — retrying...';el.style.color='var(--acc)';}
+        setTimeout(()=>{ if(realtimeChannel){sb.removeChannel(realtimeChannel);realtimeChannel=null;} startRealtime(); },5000);
       }
     });
+}
+
+// ── Broadcast handlers ──
+function handlePunchBroadcast(payload){
+  const d = payload.payload;
+  if(!d || !curUser) return;
+  if(curUser.role === 'admin'){
+    const spName = d.name || 'Salesperson';
+    const t = d.time || '';
+    if(d.action === 'in'){
+      addNotif('checkin','🟢 Punch In: '+spName, spName+' punched in at '+t, null);
+      toast('🟢 '+spName+' punched in at '+t, 'var(--grn)');
+      // Update sp attendance and checkedIn
+      const sp = spList.find(s => s.id === d.id);
+      if(sp){
+        sp.checkedIn = true; sp.cin = t;
+        if(!att[d.id]) att[d.id]={};
+        att[d.id][new Date().getDate()] = 'pr';
+      }
+    } else {
+      addNotif('checkin','🔴 Punch Out: '+spName, spName+' punched out at '+t, null);
+      toast('🔴 '+spName+' punched out at '+t, 'var(--red)');
+      const sp2 = spList.find(s => s.id === d.id);
+      if(sp2) sp2.checkedIn = false;
+    }
+    updBadges(); updS();
+    if(currentPage==='salespersons') renderPage('salespersons');
+    if(currentPage==='attendance') renderPage('attendance');
+    if(currentPage==='map') { updateAgentStatusPanel(); }
+  }
+}
+
+function handleGPSBroadcast(payload){
+  const d = payload.payload;
+  if(!d || !curUser || curUser.role !== 'admin') return;
+  const sp = spList.find(s => s.id === d.id);
+  if(!sp) return;
+  sp.liveLat = d.lat; sp.liveLng = d.lng;
+  sp.checkedIn = true; sp.visits = d.visits||sp.visits; sp.km = d.km||sp.km;
+  if(!att[d.id]) att[d.id]={};
+  att[d.id][new Date().getDate()] = 'pr';
+  if(currentPage==='map'||currentPage==='dash') updateAdminMapMarker(sp);
+  if(currentPage==='map') updateAgentStatusPanel();
+}
+
+// ── Broadcast senders ──
+function broadcastPunch(action){
+  if(!supaReady || !realtimeChannel || !curUser) return;
+  const t = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  realtimeChannel.send({
+    type:'broadcast', event:'punch',
+    payload:{id:curUser.id, name:curUser.name, action, time:t}
+  });
+}
+
+function broadcastGPS(){
+  if(!supaReady || !realtimeChannel || !curUser || !myLat || !myLng) return;
+  const sp = spList.find(s=>s.id===curUser.id);
+  realtimeChannel.send({
+    type:'broadcast', event:'gps',
+    payload:{id:curUser.id, name:curUser.name, lat:myLat, lng:myLng,
+             visits:sp?.visits||0, km:sp?.km||'0 km'}
+  });
 }
 
 function handleRealtimeOrder(payload){
@@ -1094,6 +1174,12 @@ function handleRealtimeLiveLocation(payload){
   if(r.lng) sp.liveLng = r.lng;
   if(r.route){ try{ sp.route = JSON.parse(r.route); }catch(e){} }
   normalizeSpRoutes();
+  // Update attendance in real-time
+  if(r.checked_in){
+    if(!att[r.id]) att[r.id]={};
+    att[r.id][new Date().getDate()] = 'pr';
+    lsSave();
+  }
   // If admin: update map and status panel live
   if(curUser && curUser.role === 'admin'){
     updBadges(); updS();
@@ -1215,7 +1301,7 @@ function startGPS(){
       // Update live dot on My Location map if open
       updateMyMapLiveDot();
       // Push to Supabase if salesperson and punched in
-      if(liveLocInterval) pushLiveLocation();
+      if(liveLocInterval){ pushLiveLocation(); broadcastGPS(); }
     },
     err => {
       // Don't null out myLat — keep last known if we had one
@@ -1307,7 +1393,11 @@ async function pushLiveLocation(){
     km: sp?.km || '0 km',
     updated_at: new Date().toISOString()
   };
-  try { await sbUpsert('sp_locations', row); }
+  try {
+    await sbUpsert('sp_locations', row);
+    // Also broadcast GPS via channel for instant admin map update
+    broadcastGPS();
+  }
   catch(e){ console.warn('Live location push failed', e); }
 }
 
@@ -1390,6 +1480,8 @@ async function loadSpLiveLocations(){
     const { data } = await sb.from('sp_locations').select('*');
     if(!data || !data.length) return;
     data.forEach(r => {
+      // Skip event rows
+      if(r.id && (r.id.includes('_ev_') || r.id.endsWith('_event'))) return;
       const sp = spList.find(s => s.id === r.id);
       if(!sp) return;
       // Only apply data from current work day (within last 12 hours)
@@ -1402,6 +1494,11 @@ async function loadSpLiveLocations(){
       if(r.lat) sp.liveLat = r.lat;
       if(r.lng) sp.liveLng = r.lng;
       if(r.route){ try{ sp.route = JSON.parse(r.route); } catch(e){} }
+      // Mark attendance based on live data (works on admin device too)
+      if(r.checked_in){
+        if(!att[r.id]) att[r.id]={};
+        att[r.id][new Date().getDate()] = 'pr';
+      }
     });
     normalizeSpRoutes();
   } catch(e){ console.warn('loadSpLiveLocations error', e); }
@@ -1594,8 +1691,10 @@ function doPunchIn(){
   // Note: the GPS watchPosition handler also calls pushLiveLocation() on each GPS fix
   // so the first push happens as soon as GPS lock is acquired
   startLiveLocationPush();
+  // Broadcast punch-in immediately (instant — no DB latency)
+  broadcastPunch('in');
   startApp();
-  // Notify admin of punch-in — use unique ID to guarantee INSERT (not UPDATE)
+  // Also write to DB for persistence (in case admin reconnects later)
   // INSERT always fires realtime; UPDATE may be missed if admin just connected
   setTimeout(()=>{
     if(!supaReady) return;
@@ -1624,8 +1723,9 @@ function doPunchOut(){
   document.getElementById('punchbar').classList.remove('show');
   document.getElementById('app').classList.remove('show');
   document.getElementById('punchScreen').classList.add('visible');
+  broadcastPunch('out');
   stopLiveLocationPush();
-  // Notify admin of punch-out via INSERT (guarantees realtime fires)
+  // Also write to DB for persistence
   if(supaReady && curUser){
     const outTime=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
     const evId2 = curUser.id+'_ev_'+Date.now();
@@ -2802,7 +2902,8 @@ function downloadCatSample(){
 // SALESPERSONS
 // ============================================================
 function renderSPPage(pc,ta){
-  ta.innerHTML=`<span style="font-size:12px;color:var(--mut);margin-right:6px">\${spList.length}/\${MAX_USERS} users</span><button class="btn btn-gold" onclick="openAddSP()">+ Add Salesperson</button>`;
+  ta.innerHTML='<span style="font-size:12px;color:var(--mut);margin-right:6px">'+spList.length+' / '+MAX_USERS+' users</span>'
+    +'<button class="btn btn-gold" style="margin-left:8px" onclick="openAddSP()">+ Add Salesperson</button>';
   pc.innerHTML=`<div class="card"><div class="tw"><table><thead><tr><th>Name</th><th>User ID</th><th>Mobile</th><th>Zone</th><th>Status</th><th>Today</th><th>Orders</th><th>Actions</th></tr></thead><tbody id="spTbl"></tbody></table></div></div>`;
   renderSPTable();
 }
