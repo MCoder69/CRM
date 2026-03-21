@@ -591,9 +591,172 @@ input,select,textarea,button{font-family:inherit}
 
 /* Divider */
 .divider{border:none;border-top:1px solid var(--bor);margin:16px 0}
+
+/* ══════════════════════════════════════════════
+   MOBILE NAVIGATION BAR (bottom tab bar)
+══════════════════════════════════════════════ */
+#mobileNav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:300;
+  background:var(--sur);
+  border-top:1px solid var(--bor);
+  padding:6px 0 env(safe-area-inset-bottom,6px);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+.mob-tabs{display:flex;justify-content:space-around;align-items:center}
+.mob-tab{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 8px;cursor:pointer;border-radius:10px;
+  color:var(--mut);font-size:10px;font-weight:600;
+  transition:all .15s;flex:1;letter-spacing:.2px;min-width:0;
+  position:relative;
+}
+.mob-tab.act{color:var(--acc)}
+.mob-tab svg{transition:transform .15s}
+.mob-tab.act svg{transform:scale(1.05)}
+.mob-tab-badge{
+  position:absolute;top:4px;right:calc(50% - 14px);
+  background:var(--red);color:#fff;font-size:8px;font-weight:700;
+  min-width:14px;height:14px;border-radius:7px;padding:0 3px;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--sur);
+}
+
+/* ══════════════════════════════════════════════
+   MOBILE HEADER (replaces topbar on mobile)
+══════════════════════════════════════════════ */
+#mobileHeader{
+  display:none;
+  position:sticky;top:0;z-index:200;
+  background:var(--sur);
+  border-bottom:1px solid var(--bor);
+  padding:10px 16px;
+  align-items:center;gap:10px;
+}
+.mob-header-title{font-size:17px;font-weight:800;letter-spacing:-.4px;flex:1}
+.mob-header-right{display:flex;align-items:center;gap:8px}
+.mob-icon-btn{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--sur2);border:1px solid var(--bor);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--mut);transition:all .15s;
+  position:relative;flex-shrink:0;
+}
+.mob-icon-btn:hover,.mob-icon-btn:active{background:var(--sur3);color:var(--txt)}
+
+/* ══════════════════════════════════════════════
+   MOBILE SIDEBAR OVERLAY
+══════════════════════════════════════════════ */
+#sbOverlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.6);z-index:98;
+  backdrop-filter:blur(2px);
+}
+#sbOverlay.show{display:block}
+.sb.mob-open{transform:translateX(0)!important}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+══════════════════════════════════════════════ */
+@media(max-width:768px){
+  /* Show mobile UI, hide desktop UI */
+  .sb{transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:99}
+  .main-wrap{margin-left:0}
+  .topbar{display:none}
+  #mobileNav{display:block}
+  #mobileHeader{display:flex}
+
+  /* Content padding adjusts for bottom nav */
+  .con{padding:14px 14px 80px;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+
+  /* Grids collapse on mobile */
+  .g2,.g3,.g4,.g5{grid-template-columns:1fr}
+  .g2.mob-2{grid-template-columns:1fr 1fr}
+  
+  /* Punch screen */
+  .p-card{padding:22px;gap:12px}
+  .p-clock{font-size:44px}
+
+  /* Login */
+  .l-card{padding:24px;border-radius:var(--r2)}
+
+  /* Tables → card layout on mobile */
+  .tw table{min-width:600px}
+
+  /* Cards */
+  .card{padding:14px}
+  
+  /* Modals full screen on mobile */
+  .mov{align-items:flex-end;padding:0}
+  .mo{width:100%;max-width:100%;border-radius:var(--r3) var(--r3) 0 0;max-height:88vh;padding:20px}
+  .mo.wide,.mo.sm{width:100%;max-width:100%}
+
+  /* Stat cards smaller on mobile */
+  .sc{padding:14px 16px}
+  .sc-v{font-size:24px}
+
+  /* Forms 1-col on mobile */
+  .fg{grid-template-columns:1fr}
+  .fgr.full{grid-column:1}
+
+  /* Hide desktop-only elements */
+  .desk-only{display:none!important}
+
+  /* Map heights */
+  #dashMap,#trackMap{height:260px}
+  #visitMap{height:320px}
+  #spVisitMap{height:300px}
+
+  /* Order items grid */
+  .oir{grid-template-columns:1fr 1fr;gap:8px}
+  .oir .btn{grid-column:1/-1}
+
+  /* Punch bar */
+  #punchbar{padding:6px 14px}
+
+  /* Notification dropdown */
+  .ndrop{right:0;left:0;width:auto;border-radius:var(--r2);margin:0 10px}
+
+  /* Search inputs full width */
+  .si{width:100%}
+
+  /* SP page header counts */
+  .sp-header-count{display:none}
+}
+
+@media(max-width:480px){
+  .p-clock{font-size:38px}
+  .con{padding:12px 12px 80px;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+  .card{padding:12px}
+  .sc-v{font-size:22px}
+}
 </style>
 </head>
 <body>
+
+<!-- MOBILE SIDEBAR OVERLAY -->
+<div id="sbOverlay" onclick="closeMobileSidebar()"></div>
+
+<!-- MOBILE HEADER (shown on mobile instead of topbar) -->
+<div id="mobileHeader">
+  <button class="mob-icon-btn" onclick="toggleMobileSidebar()" aria-label="Menu">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="mob-header-title" id="mobTitle">Dashboard</div>
+  <div class="mob-header-right">
+    <div class="mob-icon-btn" onclick="toggleND()" id="mobBell">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <div class="mob-tab-badge" id="mobBellBadge" style="display:none">0</div>
+    </div>
+    <div class="mob-icon-btn" id="mobTopAction"></div>
+  </div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<div id="mobileNav">
+  <div class="mob-tabs" id="mobTabs"></div>
+</div>
 
 <!-- LOGIN -->
 <div id="loginScreen">
@@ -732,7 +895,7 @@ input,select,textarea,button{font-family:inherit}
     </div>
     <div class="ndrop" id="ndrop">
       <div style="padding:12px 15px;border-bottom:1px solid var(--bor);display:flex;justify-content:space-between;align-items:center">
-        <span style="font-weight:700;font-size:14px">🔔 Notifications</span>
+        <span style="font-weight:700;font-size:14px">Notifications</span>
         <button class="btn btn-out" style="padding:3px 10px;font-size:11px" onclick="markAllRead()">Mark All Read</button>
       </div>
       <div id="ndropList" style="max-height:300px;overflow-y:auto"></div>
@@ -760,7 +923,7 @@ input,select,textarea,button{font-family:inherit}
 
 <!-- CUSTOMER MODAL -->
 <div class="mov" id="mCust"><div class="mo" style="max-width:660px">
-  <div class="mo-h"><div class="mo-t">👥 Add Customer</div><button class="xb" onclick="closeM('mCust')">✕</button></div>
+  <div class="mo-h"><div class="mo-t">Add Customer</div><button class="xb" onclick="closeM('mCust')">✕</button></div>
   <div class="fg">
     <div class="fgr full"><label>Company / Firm Name *</label><input type="text" id="cu-name" placeholder="e.g. ABC Interiors"></div>
     <div class="fgr"><label>GST Number</label><input type="text" id="cu-gst" placeholder="27AABCU9603R1ZM" maxlength="15" style="text-transform:uppercase"></div>
@@ -775,7 +938,7 @@ input,select,textarea,button{font-family:inherit}
     <!-- MAP PREVIEW -->
     <div class="fgr full" id="cuMapSection">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <label style="margin:0">📍 Location Preview</label>
+        <label style="margin:0">Location Preview</label>
         <div id="cuGeoStatus" style="font-size:11px;color:var(--mut)"></div>
       </div>
       <div style="border-radius:10px;overflow:hidden;border:1px solid var(--bor);height:210px;position:relative;background:var(--sur2)">
@@ -801,14 +964,14 @@ input,select,textarea,button{font-family:inherit}
 
 <!-- ORDER MODAL -->
 <div class="mov" id="mOrder"><div class="mo wide">
-  <div class="mo-h"><div class="mo-t">🛒 New Order</div><button class="xb" onclick="closeM('mOrder')">✕</button></div>
+  <div class="mo-h"><div class="mo-t">New Order</div><button class="xb" onclick="closeM('mOrder')">✕</button></div>
   <div class="fg">
     <div class="fgr full"><label>Customer *</label><select id="o-cust"><option value="">-- Select Customer --</option></select></div>
     <div class="fgr"><label>Order Date</label><input type="date" id="o-date"></div>
     <div class="fgr"><label>Expected Delivery</label><input type="date" id="o-ddate"></div>
   </div>
   <div class="divider"></div>
-  <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">📦 Order Items</div>
+  <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">Order Items</div>
   <div style="display:grid;grid-template-columns:1.5fr 1fr 0.7fr 0.8fr 0.8fr auto;gap:7px;padding:6px 10px;background:var(--sur2);border-radius:8px 8px 0 0;font-size:10px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">
     <span>Product</span><span>Item Code</span><span>Size</span><span>Qty</span><span>Rate (₹)</span><span></span>
   </div>
@@ -820,13 +983,13 @@ input,select,textarea,button{font-family:inherit}
       <select id="o-pay"><option>Cash on Delivery</option><option>Net 30 Days</option><option>Net 15 Days</option><option>Advance Payment</option><option>Credit (30 Days)</option></select>
     </div>
     <div class="fgr"><label>Priority</label>
-      <select id="o-pri"><option value="normal">Normal</option><option value="urgent">🔴 Urgent</option><option value="high">🟡 High</option></select>
+      <select id="o-pri"><option value="normal">Normal</option><option value="urgent">Urgent</option><option value="high">High</option></select>
     </div>
     <div class="fgr full"><label>Special Instructions</label><textarea id="o-notes" rows="2" placeholder="Any special instructions..."></textarea></div>
   </div>
   <div style="background:var(--sur2);border-radius:10px;padding:12px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
     <span style="font-size:13px;color:var(--mut)">Estimated Total:</span>
-    <span style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--acc)" id="oTotal">₹ 0</span>
+    <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:700;color:var(--acc)" id="oTotal">₹ 0</span>
   </div>
   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
     <button class="btn btn-out" onclick="closeM('mOrder')">Cancel</button>
@@ -836,7 +999,7 @@ input,select,textarea,button{font-family:inherit}
 
 <!-- DISPATCH MODAL -->
 <div class="mov" id="mDisp"><div class="mo wide">
-  <div class="mo-h"><div class="mo-t">🚚 Dispatch Order</div><button class="xb" onclick="closeM('mDisp')">✕</button></div>
+  <div class="mo-h"><div class="mo-t">Dispatch Order</div><button class="xb" onclick="closeM('mDisp')">✕</button></div>
   <div id="dispOrderInfo"></div>
   <div class="fg" style="margin-top:14px">
     <div class="fgr"><label>Courier / Transport *</label>
@@ -849,19 +1012,19 @@ input,select,textarea,button{font-family:inherit}
     <div class="fgr"><label>Driver / Delivery Person</label><input type="text" id="d-driver" placeholder="Driver name and mobile"></div>
     <div class="fgr"><label>Delivery Status</label>
       <select id="d-delstatus">
-        <option value="packed">📦 Packed</option>
-        <option value="out_for_delivery">🚚 Out for Delivery</option>
-        <option value="dispatched">✅ Dispatched</option>
+        <option value="packed">Packed</option>
+        <option value="out_for_delivery">Out for Delivery</option>
+        <option value="dispatched">Dispatched</option>
       </select>
     </div>
     <div class="fgr full"><label>Dispatch Notes</label><textarea id="d-notes" rows="2" placeholder="Any additional information..."></textarea></div>
   </div>
   <div class="divider"></div>
-  <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">📱 Customer Acknowledgement Message (WhatsApp / SMS):</div>
+  <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">Customer Acknowledgement Message:</div>
   <div class="wa"><div class="wamsg" id="waMsg">Loading...</div></div>
   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
     <button class="btn btn-out" onclick="closeM('mDisp')">Cancel</button>
-    <button class="btn btn-grn" onclick="doDispatch()">✅ Confirm Dispatch &amp; Notify Customer</button>
+    <button class="btn btn-grn" onclick="doDispatch()">Confirm Dispatch</button>
   </div>
 </div></div>
 
@@ -872,10 +1035,10 @@ input,select,textarea,button{font-family:inherit}
   <div class="fg">
     <div class="fgr full"><label>Delivery Status *</label>
       <select id="proof-status">
-        <option value="packed">📦 Packed — Ready for dispatch</option>
-        <option value="out_for_delivery">🚚 Out for Delivery</option>
-        <option value="delivered">✅ Delivered Successfully</option>
-        <option value="failed">❌ Delivery Failed</option>
+        <option value="packed">Packed — Ready for dispatch</option>
+        <option value="out_for_delivery">Out for Delivery</option>
+        <option value="delivered">Delivered</option>
+        <option value="failed">Delivery Failed</option>
       </select>
     </div>
     <div class="fgr full"><label>Driver / Person</label><input type="text" id="proof-driver" placeholder="Driver name and mobile"></div>
@@ -943,14 +1106,14 @@ input,select,textarea,button{font-family:inherit}
   <div id="ackBody"></div>
   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
     <button class="btn btn-out" onclick="closeM('mAck')">Close</button>
-    <button class="btn btn-blue" id="ackInvBtn" onclick="">🧾 Invoice PDF</button>
+    <button class="btn btn-blue" id="ackInvBtn" onclick="">Invoice PDF</button>
     <button class="btn btn-grn" onclick="window.print()">🖨️ Print</button>
   </div>
 </div></div>
 
 <!-- PRODUCT MODAL -->
 <div class="mov" id="mProd"><div class="mo sm">
-  <div class="mo-h"><div class="mo-t">📦 Add Product</div><button class="xb" onclick="closeM('mProd')">✕</button></div>
+  <div class="mo-h"><div class="mo-t">Add Product</div><button class="xb" onclick="closeM('mProd')">✕</button></div>
   <div class="fg">
     <div class="fgr full"><label>Product Name *</label><input type="text" id="p-name" placeholder="e.g. Wall Tile Glossy White"></div>
     <div class="fgr"><label>Item Code *</label><input type="text" id="p-code" placeholder="e.g. VMT-001" style="text-transform:uppercase"></div>
@@ -978,9 +1141,9 @@ input,select,textarea,button{font-family:inherit}
 
 <!-- BULK PARTY UPLOAD MODAL -->
 <div class="mov" id="mBulkParty"><div class="mo wide">
-  <div class="mo-h"><div class="mo-t">👥 Bulk Customer Upload</div><button class="xb" onclick="closeM('mBulkParty')">✕</button></div>
+  <div class="mo-h"><div class="mo-t">Bulk Upload — Customers</div><button class="xb" onclick="closeM('mBulkParty')">✕</button></div>
   <div style="background:var(--sur2);border-radius:10px;padding:13px;margin-bottom:14px">
-    <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:7px">📋 CSV Format — columns must be in this order:</div>
+    <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:7px">CSV Format — columns in this order:</div>
     <div style="font-family:monospace;font-size:11px;color:var(--txt);background:var(--bg);padding:8px 12px;border-radius:6px;border:1px solid var(--bor)">Customer Name, Mobile, GST Number, Contact Person, City, State, Address, Type, Salesperson ID</div>
     <div style="font-size:11px;color:var(--mut);margin-top:8px">
       • <b>Type</b> options: Retailer / Dealer / Distributor / Architect / Builder / Direct<br>
@@ -998,7 +1161,7 @@ input,select,textarea,button{font-family:inherit}
     <textarea id="bulkPartyText" rows="8" placeholder="Customer Name, Mobile, GST, Contact, City, State, Address, Type, SP-ID&#10;ABC Interiors, 9876543210, 24AABCA1234A1Z1, Ramesh Shah, Surat, Gujarat, Shop 5 Ring Road, Retailer, sp01" style="font-size:12px;font-family:monospace;line-height:1.6"></textarea>
   </div>
   <div id="bulkPartyPreview" style="display:none">
-    <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;color:var(--grn)">✅ Preview — Records to be imported:</div>
+    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;color:var(--grn)">Preview — Records to import:</div>
     <div class="tw" id="bulkPartyTable" style="max-height:220px;overflow-y:auto"></div>
     <div style="margin-top:8px;font-size:12px;color:var(--mut)" id="bulkPartyCount"></div>
   </div>
@@ -1011,9 +1174,9 @@ input,select,textarea,button{font-family:inherit}
 
 <!-- BULK CATALOGUE UPLOAD MODAL -->
 <div class="mov" id="mBulkCat"><div class="mo wide">
-  <div class="mo-h"><div class="mo-t">📦 Bulk Catalogue Upload</div><button class="xb" onclick="closeM('mBulkCat')">✕</button></div>
+  <div class="mo-h"><div class="mo-t">Bulk Upload — Catalogue</div><button class="xb" onclick="closeM('mBulkCat')">✕</button></div>
   <div style="background:var(--sur2);border-radius:10px;padding:13px;margin-bottom:14px">
-    <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:7px">📋 CSV Format — columns must be in this order:</div>
+    <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:7px">CSV Format — columns in this order:</div>
     <div style="font-family:monospace;font-size:11px;color:var(--txt);background:var(--bg);padding:8px 12px;border-radius:6px;border:1px solid var(--bor)">Item Code, Product Name, Category, Price, Unit, Sizes, HSN Code, Description</div>
     <div style="font-size:11px;color:var(--mut);margin-top:8px">
       • <b>Unit</b> options: Sq.Ft / Sq.Mtr / Box / Piece / Set / Roll / Sheet<br>
@@ -1031,7 +1194,7 @@ input,select,textarea,button{font-family:inherit}
     <textarea id="bulkCatText" rows="8" placeholder="Item Code, Product Name, Category, Price, Unit, Sizes, HSN Code, Description&#10;PROD-001, Product Name, Wall Tiles, 100, Sq.Ft, 12x18, 69072100, Product description" style="font-size:12px;font-family:monospace;line-height:1.6"></textarea>
   </div>
   <div id="bulkCatPreview" style="display:none">
-    <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;color:var(--grn)">✅ Preview — Records to be imported:</div>
+    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px;color:var(--grn)">Preview — Records to import:</div>
     <div class="tw" id="bulkCatTable" style="max-height:220px;overflow-y:auto"></div>
     <div style="margin-top:8px;font-size:12px;color:var(--mut)" id="bulkCatCount"></div>
   </div>
@@ -1044,7 +1207,7 @@ input,select,textarea,button{font-family:inherit}
 
 <!-- EXPENSE MODAL -->
 <div class="mov" id="mExpense"><div class="mo wide">
-  <div class="mo-h"><div class="mo-t">💸 Add Expense</div><button class="xb" onclick="closeM('mExpense')">✕</button></div>
+  <div class="mo-h"><div class="mo-t">Add Expense</div><button class="xb" onclick="closeM('mExpense')">✕</button></div>
   <div class="fg">
     <div class="fgr"><label>Expense Category *</label>
       <select id="exp-cat">
@@ -1090,7 +1253,7 @@ input,select,textarea,button{font-family:inherit}
 
 <!-- EXPENSE IMAGE VIEWER -->
 <div class="mov" id="mExpImg"><div class="mo wide">
-  <div class="mo-h"><div class="mo-t">🖼️ Supporting Document</div><button class="xb" onclick="closeM('mExpImg')">✕</button></div>
+  <div class="mo-h"><div class="mo-t">Supporting Document</div><button class="xb" onclick="closeM('mExpImg')">✕</button></div>
   <div id="expImgBody" style="text-align:center;padding:8px 0"></div>
   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:14px">
     <button class="btn btn-out" onclick="closeM('mExpImg')">Close</button>
@@ -1108,7 +1271,7 @@ input,select,textarea,button{font-family:inherit}
   </div>
   <div id="cvMapDiv" style="height:380px;width:100%;border-radius:10px;border:1px solid var(--bor);overflow:hidden"></div>
   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:14px">
-    <a id="cvMapGLink" href="#" target="_blank" class="btn btn-blue" style="text-decoration:none;display:flex;align-items:center;gap:6px">🗺️ Open in Google Maps</a>
+    <a id="cvMapGLink" href="#" target="_blank" class="btn btn-blue" style="text-decoration:none;display:flex;align-items:center;gap:6px">Open in Google Maps</a>
     <button class="btn btn-out" onclick="if(window._cvMap){window._cvMap.remove();window._cvMap=null;}closeM('mCustView')">Close</button>
   </div>
 </div></div>
@@ -1512,7 +1675,7 @@ function handleRealtimeOrder(payload){
     const idx=orders.findIndex(x=>x.id===o.id);
     if(idx>-1) orders[idx]=o; else orders.unshift(o);
     if(payload.eventType==='INSERT'&&curUser&&curUser.role==='admin'&&o.spId!==curUser.id){
-      addNotif('order','🛒 New Order: '+o.id,'Customer: '+o.custName+' | ₹'+o.total.toLocaleString('en-IN')+' | '+o.spName,o.id);
+      addNotif('order','New Order: '+o.id,'Customer: '+o.custName+' | ₹'+o.total.toLocaleString('en-IN')+' | '+o.spName,o.id);
       toast('🛒 New order from '+o.spName+' — '+o.custName,'var(--blue)');
     }
   }
@@ -1772,7 +1935,7 @@ function showGPSInstructions(){
   el.style.cssText = 'background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--txt);line-height:1.6;margin-top:4px';
   el.innerHTML = `
     <div style="font-weight:700;color:var(--acc);margin-bottom:6px">📍 How to enable location:</div>
-    <div><b>Chrome (Android):</b> Tap 🔒 in address bar → Site Settings → Location → Allow</div>
+    <div><b>Chrome (Android):</b> Tap the lock icon in address bar → Site Settings → Location → Allow</div>
     <div style="margin-top:4px"><b>Safari (iPhone):</b> Settings → Safari → Location → Allow</div>
     <div style="margin-top:4px"><b>Or:</b> Phone Settings → Apps → Browser → Permissions → Location</div>
     <div style="margin-top:6px;color:var(--mut)">After allowing, refresh the page and tap the button again.</div>`;
@@ -2231,6 +2394,8 @@ function buildNav(){
       ni('customers','customers','Customers')+
       ni('myexpenses','expenses','My Expenses');
   }
+  // Build mobile nav after role is known
+  setTimeout(buildMobileNav, 0);
 }
 
 // ============================================================
@@ -2243,8 +2408,10 @@ function go(name,el){
   else{const f=document.querySelector(`.ni[onclick*="'${name}'"]`); if(f)f.classList.add('act');}
   const T={dash:'Dashboard',orders:'Order Management',dispatch:'Dispatch Management',notifs:'Notifications',map:'Live Agent Map',spmap:'Sales Person Map',customers:'Customers',products:'Products',salespersons:'Salespersons',reports:'Reports',salesreport:'Sales Report',expenses:'Expenses',myexpenses:'My Expenses',myorders:'My Orders',attendance:'My Attendance',mymap:'My Location',settings:'Settings',checkin:'Check-In Visit',transport:'Transport List',dispatchstaff:'Dispatch Staff',deliveryupdate:'Update Delivery'};
   const ptEl=document.getElementById('ptitle'); if(ptEl) ptEl.textContent=T[name]||name;
+  updateMobileHeader(T[name]||name);
+  closeMobileSidebar();
   document.getElementById('ndrop').classList.remove('open');
-  document.getElementById('pageContent').innerHTML='<div style="text-align:center;padding:40px;color:var(--mut)"><div style="font-size:28px;margin-bottom:10px">⏳</div>Loading...</div>';
+  document.getElementById('pageContent').innerHTML='<div style="text-align:center;padding:40px;color:var(--mut)"><div style="margin-bottom:10px;opacity:.4"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23,4 23,10 17,10"/><polyline points="1,20 1,14 7,14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></div>Loading...</div>';
   setTimeout(()=>renderPage(name),30);
 }
 
@@ -2263,13 +2430,13 @@ function renderPage(name){
   const adminOnly=['orders','map','products','salespersons','reports','expenses','settings','salesreport','spmap'];
   const dispatchAllowed=['dispatch','transport','notifs','dash'];
   if(curUser.role==='dispatch'&&!dispatchAllowed.includes(name)){
-    pc.innerHTML=`<div class="es" style="padding:60px"><div style="font-size:48px;margin-bottom:16px">🔒</div><div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px">Access Denied</div><div style="font-size:14px;color:var(--mut)">This page is not accessible to Dispatch Staff.</div></div>`;
+    pc.innerHTML=`<div class="es" style="padding:60px"><div style="margin-bottom:16px;opacity:.35"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div><div style="font-size:18px;font-weight:800;margin-bottom:8px;letter-spacing:-.3px">Access Denied</div><div style="font-size:13px;color:var(--mut)">This page is not available for your role.</div></div>`;
     return;
   }
   if(curUser.role==='sales'&&(adminOnly.includes(name)||['dispatch','transport','dispatchstaff'].includes(name))){
     pc.innerHTML=`<div class="es" style="padding:60px">
-      <div style="font-size:48px;margin-bottom:16px">🔒</div>
-      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px">Access Denied</div>
+      <div style="margin-bottom:16px;opacity:.35"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:8px;letter-spacing:-.3px">Access Denied</div>
       <div style="font-size:14px;color:var(--mut)">This page is accessible to Admins only.</div>
     </div>`;
     return;
@@ -2323,22 +2490,22 @@ function renderDash(pc,ta){
     </div>
     <div class="g2">
       <div class="card">
-        <div class="card-h"><span class="card-t">📦 Recent Activity</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('dispatch')">View All</button></div>
+        <div class="card-h"><span class="card-t">Recent Activity</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('dispatch')">View All</button></div>
         ${[...confirmed2.slice(0,3),...dispatched2.slice(0,3)].map(o=>`
         <div class="trow">
           <div style="flex:1"><div style="font-weight:700;font-size:13px">${o.id} — ${o.custName}</div>
           <div style="font-size:11px;color:var(--mut)">${o.disp?.courier||'Not dispatched'} | ₹${o.total.toLocaleString('en-IN')}</div></div>
-          ${o.status==='confirmed'?'<span class="badge b-blue">📦 Confirmed</span>':
-            o.deliveryStatus==='out_for_delivery'?'<span class="dsp-status dsp-otd">🚚 OTD</span>':
-            o.deliveryStatus==='delivered'?'<span class="dsp-status dsp-delivered">✅ Delivered</span>':
+          ${o.status==='confirmed'?'<span class="badge b-blue">Confirmed</span>':
+            o.deliveryStatus==='out_for_delivery'?'<span class="dsp-status dsp-otd">In Transit</span>':
+            o.deliveryStatus==='delivered'?'<span class="dsp-status dsp-delivered">Delivered</span>':
             '<span class="badge b-grn">Dispatched</span>'}
         </div>`).join('')||'<div class="es"><div class="ei"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.3"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 001 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>No recent activity</div>'}
       </div>
       <div class="card">
-        <div class="card-h"><span class="card-t">⚡ Quick Actions</span></div>
+        <div class="card-h"><span class="card-t">Quick Actions</span></div>
         <div style="display:flex;flex-direction:column;gap:9px">
           <button class="btn btn-gold" style="width:100%;text-align:left;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:10px" onclick="go('dispatch')">
-            <span style="font-size:18px">🚚</span><span><b>Manage Dispatch Queue</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">${confirmed2.length} orders to pack</div></span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span><b>Manage Dispatch Queue</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">${confirmed2.length} orders to pack</div></span>
           </button>
           <button class="btn btn-out" style="width:100%;text-align:left;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:10px;border-color:var(--pur);color:var(--pur)" onclick="go('transport')">
             <span style="font-size:18px">🚛</span><span><b>View Transport List</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">${transportList.filter(t=>t.status==='active').length} active carriers</div></span>
@@ -2360,17 +2527,17 @@ function renderDash(pc,ta){
       </div>
       <div class="g2" style="margin-bottom:16px">
         <div class="card">
-          <div class="card-h"><span class="card-t">🛒 Recent Orders</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('orders')">View All</button></div>
+          <div class="card-h"><span class="card-t">Recent Orders</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('orders')">View All</button></div>
           <div>${recentOrdersHTML()}</div>
         </div>
         <div class="card">
-          <div class="card-h"><span class="card-t">🔔 Latest Notifications</span></div>
+          <div class="card-h"><span class="card-t">Notifications</span></div>
           <div>${recentNotifsHTML()}</div>
         </div>
       </div>
       <div class="card">
         <div class="card-h">
-          <span class="card-t">🗺️ Live Sales Team Map</span>
+          <span class="card-t">Live Sales Team Map</span>
           <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--grn);font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:var(--grn);animation:blink 1.5s infinite;display:inline-block"></span>LIVE</span>
         </div>
         <div id="dashMap"></div>
@@ -2395,8 +2562,8 @@ function renderDash(pc,ta){
     <!-- Welcome Banner -->
     <div style="background:linear-gradient(135deg,rgba(59,130,246,.15),rgba(245,158,11,.08));border:1px solid rgba(59,130,246,.2);border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
       <div>
-        <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--txt)">👋 Welcome, ${curUser.name}!</div>
-        <div style="font-size:12px;color:var(--mut);margin-top:3px">📍 Zone: <b style="color:var(--blue)">${sp.zone||'—'}</b> &nbsp;|&nbsp; 📅 ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})} &nbsp;|&nbsp; ⏱️ Punched In: <b style="color:var(--grn)">${cinTime}</b></div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;color:var(--txt)">Welcome back, ${curUser.name}</div>
+        <div style="font-size:12px;color:var(--mut);margin-top:3px">Zone: <b style="color:var(--blue)">${sp.zone||'—'}</b>  · ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})} &nbsp;|&nbsp; Punched In: <b style="color:var(--grn)">${cinTime}</b></div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-gold" onclick="openOrderModal()" style="font-size:12px;padding:8px 14px">+ New Order</button>
@@ -2433,7 +2600,7 @@ function renderDash(pc,ta){
 
       <!-- Today's Activity Card -->
       <div class="card">
-        <div class="card-h"><span class="card-t">📅 Today's Activity</span><span style="font-size:11px;color:var(--grn);font-weight:600">● LIVE</span></div>
+        <div class="card-h"><span class="card-t">Today's Activity</span><span style="font-size:11px;color:var(--grn);font-weight:600">● LIVE</span></div>
         <div class="trow"><div class="tdot" style="background:var(--acc)"></div><div style="flex:1;font-size:13px">Today's Orders</div><b style="color:var(--acc)">${todayOrders.length}</b></div>
         <div class="trow"><div class="tdot" style="background:var(--grn)"></div><div style="flex:1;font-size:13px">Visits Today</div><b style="color:var(--grn)">${sp.visits||0}</b></div>
         <div class="trow"><div class="tdot" style="background:var(--blue)"></div><div style="flex:1;font-size:13px">Distance Covered</div><b style="color:var(--blue)">${sp.km||'0 km'}</b></div>
@@ -2443,7 +2610,7 @@ function renderDash(pc,ta){
 
       <!-- Order Status Breakdown -->
       <div class="card">
-        <div class="card-h"><span class="card-t">📊 Order Status</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('myorders')">View All</button></div>
+        <div class="card-h"><span class="card-t">Order Status</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('myorders')">View All</button></div>
         ${[['pending','⏳ Pending','var(--acc)'],['confirmed','✅ Confirmed','var(--blue)'],['dispatched','🚚 Dispatched','var(--grn)'],['cancelled','✕ Cancelled','var(--red)']].map(([s,l,c])=>{
           const cnt=myOrders.filter(o=>o.status===s).length;
           const pct=myOrders.length?Math.round(cnt/myOrders.length*100):0;
@@ -2463,7 +2630,7 @@ function renderDash(pc,ta){
     <!-- Recent Orders + Quick Actions -->
     <div class="g2" style="margin-bottom:16px">
       <div class="card">
-        <div class="card-h"><span class="card-t">🛒 Recent Orders</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('myorders')">View All</button></div>
+        <div class="card-h"><span class="card-t">Recent Orders</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('myorders')">View All</button></div>
         ${myOrders.length?myOrders.slice(0,5).map(o=>`
         <div class="trow" style="cursor:pointer" onclick="go('myorders')">
           <div style="flex:1">
@@ -2476,7 +2643,7 @@ function renderDash(pc,ta){
 
       <!-- Quick Actions -->
       <div class="card">
-        <div class="card-h"><span class="card-t">⚡ Quick Actions</span></div>
+        <div class="card-h"><span class="card-t">Quick Actions</span></div>
         <div style="display:flex;flex-direction:column;gap:9px">
           <button class="btn btn-gold" style="width:100%;text-align:left;padding:11px 14px;font-size:13px;display:flex;align-items:center;gap:10px" onclick="openOrderModal()">
             <span style="font-size:18px">🛒</span><span><b>Place New Order</b><div style="font-size:11px;font-weight:400;margin-top:1px;opacity:.7">Add an order for a party</div></span>
@@ -2515,15 +2682,15 @@ function renderDash(pc,ta){
         <div class="card-h"><span class="card-t">💸 Expense Summary</span><button class="btn btn-out" style="padding:4px 11px;font-size:11px" onclick="go('myexpenses')">View All</button></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
           <div style="background:var(--sur2);border-radius:8px;padding:10px;text-align:center">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--acc)">${myExp.length}</div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:var(--acc)">${myExp.length}</div>
             <div style="font-size:10px;color:var(--mut)">Total</div>
           </div>
           <div style="background:rgba(16,185,129,.08);border-radius:8px;padding:10px;text-align:center;border:1px solid rgba(16,185,129,.15)">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--grn)">${approvedExp.length}</div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:var(--grn)">${approvedExp.length}</div>
             <div style="font-size:10px;color:var(--mut)">Approved</div>
           </div>
           <div style="background:rgba(245,158,11,.07);border-radius:8px;padding:10px;text-align:center;border:1px solid rgba(245,158,11,.15)">
-            <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--acc)">${pendingExp.length}</div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:var(--acc)">${pendingExp.length}</div>
             <div style="font-size:10px;color:var(--mut)">Pending</div>
           </div>
         </div>
@@ -2558,7 +2725,7 @@ function renderOrdersPage(pc,ta){
   pc.innerHTML=`
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <input type="text" class="si" style="flex:1;min-width:180px" placeholder="🔍 Search by party, order ID, salesperson..." oninput="renderOrdersList()" id="oSearch">
+        <input type="text" class="si" style="flex:1;min-width:180px" placeholder="Search orders, customers, IDs..." oninput="renderOrdersList()" id="oSearch">
         <select id="oFilter" onchange="renderOrdersList()" style="padding:7px 12px;font-size:12px;background:var(--sur2);border:1px solid var(--bor);color:var(--txt);border-radius:8px;outline:none">
           <option value="all">All Status</option><option value="pending">Pending</option>
           <option value="confirmed">Confirmed</option><option value="dispatched">Dispatched</option><option value="cancelled">Cancelled</option>
@@ -2582,7 +2749,7 @@ function renderMyOrdersPage(pc,ta){
   pc.innerHTML=`
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <input type="text" class="si" style="flex:1;min-width:180px" placeholder="🔍 Search orders..." oninput="renderMyOrdersList()" id="moSearch">
+        <input type="text" class="si" style="flex:1;min-width:180px" placeholder="Search orders..." oninput="renderMyOrdersList()" id="moSearch">
         <select id="oFilter" onchange="renderMyOrdersList()" style="padding:7px 12px;font-size:12px;background:var(--sur2);border:1px solid var(--bor);color:var(--txt);border-radius:8px;outline:none">
           <option value="all">All</option><option value="pending">Pending</option>
           <option value="confirmed">Confirmed</option><option value="dispatched">Dispatched</option><option value="cancelled">Cancelled</option>
@@ -2608,16 +2775,16 @@ function orderCard(o,isAdmin){
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700">${o.id}</span>
+          <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700">${o.id}</span>
           ${sBadge(o.status)}
-          ${o.pri==='urgent'?'<span class="badge b-red">🔴 Urgent</span>':o.pri==='high'?'<span class="badge b-gold">🟡 High</span>':''}
+          ${o.pri==='urgent'?'<span class="badge b-red">Urgent</span>':o.pri==='high'?'<span class="badge b-gold">High</span>':''}
         </div>
         <div style="margin-top:5px;font-weight:700;font-size:14px">${o.custName} <span style="font-size:12px;color:var(--mut)">📱 ${o.custMob}</span></div>
-        <div style="font-size:12px;color:var(--mut);margin-top:2px">👤 ${o.spName} &nbsp;|&nbsp; 📅 ${o.date} &nbsp;|&nbsp; 💳 ${o.pay}</div>
+        <div style="font-size:12px;color:var(--mut);margin-top:2px">${o.spName} · ${o.date} · ${o.pay}</div>
         ${o.notes?`<div style="font-size:12px;color:var(--mut);margin-top:3px">📝 ${o.notes}</div>`:''}
       </div>
       <div style="text-align:right;flex-shrink:0">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('en-IN')}</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('en-IN')}</div>
         <div style="font-size:11px;color:var(--mut)">${o.items.length} item(s)</div>
       </div>
     </div>
@@ -2670,8 +2837,8 @@ function renderDispatchPage(pc){
         <div class="step"><div class="sdot">✅</div><div class="slbl">Customer ACK</div></div>
       </div>
     </div>
-    ${ready.length?`<div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--acc)">⏳ Pending Dispatch (${ready.length})</div>`+ready.map(o=>`<div class="ocard confirmed"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">📱 ${o.custMob} | ₹${o.total.toLocaleString('en-IN')} | ${o.items.length} items | ${o.pay}</div></div><div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('en-IN')}</div></div><div class="oitems" style="margin-top:8px">${o.items.map(it=>`<div class="oitem"><span><b>${it.name}</b> (${it.code})</span><span>${it.qty} ${it.unit} | Size: ${it.size||'—'}</span></div>`).join('')}</div><div style="margin-top:10px"><button class="btn btn-grn" style="padding:6px 15px;font-size:13px" onclick="openDisp('${o.id}')">🚚 Dispatch &amp; Notify Customer</button></div></div>`).join(''):''}
-    ${done.length?`<div class="divider"></div><div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--grn)">✅ Dispatched (${done.length})</div>`+done.map(o=>`<div class="ocard dispatched"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">🚛 ${o.disp?.courier||'—'} | Driver: ${o.disp?.driver||'—'} | Track: ${o.disp?.track||'—'} | ${o.disp?.date||'—'}</div><div style="font-size:12px;color:var(--grn);margin-top:2px">📱 Customer notified ✅</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${getDeliveryStatusBadge(o)}</div></div><div style="margin-top:8px;display:flex;gap:7px"><button class="btn btn-pur" style="padding:5px 12px;font-size:12px" onclick="viewAck('${o.id}')">📨 View ACK</button><button class="btn btn-blue" style="padding:5px 12px;font-size:12px" onclick="generateInvoice('${o.id}')">🧾 Invoice PDF</button><button class="btn btn-out" style="padding:5px 12px;font-size:12px" onclick="resendAck('${o.id}')">🔄 Resend</button></div></div>`).join(''):''}
+    ${ready.length?`<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--acc)">Pending Dispatch (${ready.length})</div>`+ready.map(o=>`<div class="ocard confirmed"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">📱 ${o.custMob} | ₹${o.total.toLocaleString('en-IN')} | ${o.items.length} items | ${o.pay}</div></div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('en-IN')}</div></div><div class="oitems" style="margin-top:8px">${o.items.map(it=>`<div class="oitem"><span><b>${it.name}</b> (${it.code})</span><span>${it.qty} ${it.unit} | Size: ${it.size||'—'}</span></div>`).join('')}</div><div style="margin-top:10px"><button class="btn btn-grn" style="padding:6px 15px;font-size:13px" onclick="openDisp('${o.id}')">Dispatch & Notify Customer</button></div></div>`).join(''):''}
+    ${done.length?`<div class="divider"></div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--grn)">Dispatched (${done.length})</div>`+done.map(o=>`<div class="ocard dispatched"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-weight:700;font-size:14px">${o.id} — ${o.custName}</div><div style="font-size:12px;color:var(--mut)">🚛 ${o.disp?.courier||'—'} | Driver: ${o.disp?.driver||'—'} | Track: ${o.disp?.track||'—'} | ${o.disp?.date||'—'}</div><div style="font-size:12px;color:var(--grn);margin-top:2px">📱 Customer notified ✅</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${getDeliveryStatusBadge(o)}</div></div><div style="margin-top:8px;display:flex;gap:7px"><button class="btn btn-pur" style="padding:5px 12px;font-size:12px" onclick="viewAck('${o.id}')">📨 View ACK</button><button class="btn btn-blue" style="padding:5px 12px;font-size:12px" onclick="generateInvoice('${o.id}')">Invoice PDF</button><button class="btn btn-out" style="padding:5px 12px;font-size:12px" onclick="resendAck('${o.id}')">🔄 Resend</button></div></div>`).join(''):''}
     ${!ready.length&&!done.length?'<div class="es"><div class="ei"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.3"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>No orders ready for dispatch</div>':''}`;
 }
 
@@ -2739,7 +2906,7 @@ function viewAck(id){
   const d=o.disp;
   document.getElementById('ackBody').innerHTML=`
     <div style="background:var(--sur2);border-radius:10px;padding:14px;margin-bottom:14px">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--grn);margin-bottom:10px">✅ Dispatch Acknowledgement</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;color:var(--grn);margin-bottom:10px">Dispatch Acknowledgement</div>
       <div class="fg">
         <div><div style="font-size:10px;color:var(--mut);text-transform:uppercase">Order ID</div><div style="font-weight:700">${o.id}</div></div>
         <div><div style="font-size:10px;color:var(--mut);text-transform:uppercase">Customer Name</div><div style="font-weight:700">${o.custName}</div></div>
@@ -3010,7 +3177,7 @@ function updateMyMapLiveDot(){
 // CUSTOMERS
 // ============================================================
 function renderCustomersPage(pc,ta){
-  ta.innerHTML=`<input type="text" class="si" placeholder="🔍 Search customers..." oninput="filterCustomers(this.value)"><button class="btn btn-gold" style="margin-left:8px" onclick="openM('mCust');updCustSP()">Add Customer</button><button class="btn btn-blue" style="margin-left:6px" onclick="openM('mBulkParty')">Bulk Upload</button>`;
+  ta.innerHTML=`<input type="text" class="si" placeholder="Search customers..." oninput="filterCustomers(this.value)"><button class="btn btn-gold" style="margin-left:8px" onclick="openM('mCust');updCustSP()">Add Customer</button><button class="btn btn-blue" style="margin-left:6px" onclick="openM('mBulkParty')">Bulk Upload</button>`;
   const list=curUser.role==='admin'?customers:customers.filter(c=>c.spId===curUser.id);
   pc.innerHTML=`<div class="cg" id="custGrid">${renderCustCards(list)}</div>`;
 }
@@ -3423,14 +3590,14 @@ function renderAttPage(pc){
       <div class="card">
         <div class="card-h"><span class="card-t">📊 Summary</span></div>
         <div style="display:flex;flex-direction:column;gap:9px;margin-top:4px">
-          <div class="trow"><div class="tdot" style="background:var(--grn)"></div><div style="flex:1;font-size:13px;font-weight:600">Present Days</div><div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--grn)">${presentDays}</div></div>
-          <div class="trow"><div class="tdot" style="background:var(--red)"></div><div style="flex:1;font-size:13px;font-weight:600">Absent Days</div><div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--red)">${absentDays}</div></div>
-          <div class="trow"><div class="tdot" style="background:var(--acc)"></div><div style="flex:1;font-size:13px;font-weight:600">Total Orders</div><div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--acc)">${sp.orders||0}</div></div>
-          <div class="trow" style="border:none"><div class="tdot" style="background:var(--pur)"></div><div style="flex:1;font-size:13px;font-weight:600">Total Visits</div><div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--pur)">${sp.visits||0}</div></div>
+          <div class="trow"><div class="tdot" style="background:var(--grn)"></div><div style="flex:1;font-size:13px;font-weight:600">Present Days</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;color:var(--grn)">${presentDays}</div></div>
+          <div class="trow"><div class="tdot" style="background:var(--red)"></div><div style="flex:1;font-size:13px;font-weight:600">Absent Days</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;color:var(--red)">${absentDays}</div></div>
+          <div class="trow"><div class="tdot" style="background:var(--acc)"></div><div style="flex:1;font-size:13px;font-weight:600">Total Orders</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;color:var(--acc)">${sp.orders||0}</div></div>
+          <div class="trow" style="border:none"><div class="tdot" style="background:var(--pur)"></div><div style="flex:1;font-size:13px;font-weight:600">Total Visits</div><div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;color:var(--pur)">${sp.visits||0}</div></div>
         </div>
       </div>
       <div class="card">
-        <div class="card-h"><span class="card-t">📅 ${calTitle} — ${sp.name||'Admin'}</span></div>
+        <div class="card-h"><span class="card-t">${calTitle} — ${sp.name||'Admin'}</span></div>
         <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:6px">
           <div style="text-align:center;font-size:10px;color:var(--mut);font-weight:600">Sun</div>
           <div style="text-align:center;font-size:10px;color:var(--mut);font-weight:600">Mon</div>
@@ -3560,9 +3727,9 @@ function renderSalesReport(){
     <div class="card" style="margin-bottom:18px;border-left:4px solid ${col}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:46px;height:46px;border-radius:12px;background:${col}22;border:2px solid ${col};display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:${col}">${sp.name.charAt(0)}</div>
+          <div style="width:46px;height:46px;border-radius:12px;background:${col}22;border:2px solid ${col};display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:${col}">${sp.name.charAt(0)}</div>
           <div>
-            <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700">${sp.name}</div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700">${sp.name}</div>
             <div style="font-size:12px;color:var(--mut)">📍 ${sp.zone} &nbsp;|&nbsp; 📱 ${sp.mob} &nbsp;|&nbsp; Check-in: ${sp.cin||'—'}</div>
           </div>
         </div>
@@ -3596,7 +3763,7 @@ function renderSalesReport(){
       <div class="g2">
         <!-- Visit Timeline -->
         <div>
-          <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px;color:${col}">📍 Visit Route — ${visitRoutes.length} stops</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px;color:${col}">Visit Route — ${visitRoutes.length} stops</div>
           ${sp.route.length?sp.route.map((r,ri)=>`
             <div style="display:flex;gap:10px;padding:8px 0;position:relative${ri<sp.route.length-1?';border-bottom:1px solid var(--bor)':''}">
               <div style="width:30px;height:30px;border-radius:50%;background:${r.t==='start'?'var(--sur2)':r.t==='cur'?col+'33':col};border:2px solid ${r.t==='start'?'var(--bor)':col};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${r.t==='start'?'var(--mut)':'#000'};flex-shrink:0">
@@ -3612,15 +3779,15 @@ function renderSalesReport(){
 
         <!-- Orders list -->
         <div>
-          <div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px;color:${col}">🛒 Orders — ${myOrds.length} total</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px;color:${col}">Orders — ${myOrds.length} total</div>
           ${myOrds.length?myOrds.map(o=>`
             <div style="background:var(--sur2);border-radius:9px;padding:11px;margin-bottom:8px;border-left:3px solid ${o.status==='dispatched'?'var(--grn)':o.status==='confirmed'?'var(--blue)':o.status==='cancelled'?'var(--red)':'var(--acc)'}">
               <div style="display:flex;justify-content:space-between;align-items:center">
                 <div>
-                  <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px">${o.id}</span>
+                  <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px">${o.id}</span>
                   ${sBadge(o.status)}
                 </div>
-                <span style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('en-IN')}</span>
+                <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;color:var(--acc)">₹${o.total.toLocaleString('en-IN')}</span>
               </div>
               <div style="font-size:12px;margin-top:4px"><b>${o.custName}</b> <span style="color:var(--mut)">📱 ${o.custMob}</span></div>
               <div style="font-size:11px;color:var(--mut);margin-top:2px">📅 ${o.date} &nbsp;|&nbsp; 💳 ${o.pay} &nbsp;|&nbsp; ${o.items.length} item(s)</div>
@@ -3632,7 +3799,7 @@ function renderSalesReport(){
             if(!myExp.length)return'';
             const expTotal=myExp.reduce((s,e)=>s+e.amt,0);
             return`<div style="margin-top:12px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:9px;padding:11px">
-              <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;margin-bottom:8px;color:var(--pur)">💸 Expenses — ${myExp.length} entries &nbsp;|&nbsp; ₹${expTotal.toLocaleString('en-IN')}</div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;margin-bottom:8px;color:var(--pur)">💸 Expenses — ${myExp.length} entries &nbsp;|&nbsp; ₹${expTotal.toLocaleString('en-IN')}</div>
               ${myExp.map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--bor)">
                 <span>${e.cat} — ${e.desc}</span>
                 <span style="font-weight:700">₹${e.amt.toLocaleString('en-IN')} <span style="color:var(--mut)">${e.mode}</span></span>
@@ -3962,7 +4129,7 @@ function saveOrder(){
   orders.unshift(o); sbSaveOrder(o);
   if(curUser.role==='sales'){const s=spList.find(x=>x.id===curUser.id); if(s)s.orders++;}
   closeM('mOrder');
-  addNotif('order','🛒 New Order: '+o.id,'Customer: '+cu.name+' | ₹'+total.toLocaleString('en-IN')+' | '+o.spName,o.id);
+  addNotif('order','New Order: '+o.id,'Customer: '+cu.name+' | ₹'+total.toLocaleString('en-IN')+' | '+o.spName,o.id);
   toast('Order submitted! Team notified. ID: '+o.id);
   saveData(); updS(); updBadges();
   setTimeout(()=>toast('📤 Admin team notified about Order '+o.id,'var(--pur)'),2000);
@@ -4026,6 +4193,11 @@ function updBadges(){
   const pb=document.getElementById('pendBadge'); if(pb){pb.textContent=p;pb.style.display=p?'flex':'none';}
   const dc=orders.filter(o=>o.status==='confirmed').length;
   const db=document.getElementById('dispBadge'); if(db){db.textContent=dc;db.style.display=dc?'flex':'none';}
+  // Mobile badge mirrors
+  const mb=document.getElementById('mobBellBadge'); if(mb){mb.textContent=u;mb.style.display=u?'flex':'none';}
+  const pb2=document.getElementById('pendBadge2'); if(pb2){pb2.textContent=p;pb2.style.display=p?'flex':'none';}
+  const db2=document.getElementById('dispBadge2'); if(db2){db2.textContent=dc;db2.style.display=dc?'flex':'none';}
+  const nb2=document.getElementById('notifBadge2'); if(nb2){nb2.textContent=u;nb2.style.display=u?'flex':'none';}
 }
 
 // ============================================================
@@ -4194,7 +4366,7 @@ function renderExpCards(list,role){
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
-            <span style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700">${exp.id}</span>
+            <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700">${exp.id}</span>
             <span class="badge" style="background:rgba(0,0,0,.2);color:${statusColor};border:1px solid ${statusColor}">${statusEmoji} ${statusLabel}</span>
             <span class="badge b-blue" style="font-size:10px">${exp.cat}</span>
           </div>
@@ -4206,7 +4378,7 @@ function renderExpCards(list,role){
           ${exp.adminNote?`<div style="margin-top:5px;font-size:12px;padding:5px 10px;background:rgba(239,68,68,.08);border-radius:6px;border-left:3px solid var(--red);color:var(--mut)">📋 Admin Note: ${exp.adminNote}</div>`:''}
         </div>
         <div style="text-align:right;flex-shrink:0">
-          <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--acc)">₹${exp.amt.toLocaleString('en-IN')}</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:700;color:var(--acc)">₹${exp.amt.toLocaleString('en-IN')}</div>
           <div style="font-size:10px;color:var(--mut)">${exp.files.length} document(s)</div>
         </div>
       </div>
@@ -4332,6 +4504,88 @@ async function tryRestoreSession(){
     startApp();
     return true;
   }catch(e){ clearSession(); return false; }
+}
+
+// ============================================================
+// MOBILE NAVIGATION
+// ============================================================
+const IS_MOBILE = () => window.innerWidth <= 768;
+
+function toggleMobileSidebar(){
+  const sb = document.querySelector('.sb');
+  const ov = document.getElementById('sbOverlay');
+  if(!sb) return;
+  const open = sb.classList.contains('mob-open');
+  if(open){ sb.classList.remove('mob-open'); ov.classList.remove('show'); }
+  else { sb.classList.add('mob-open'); ov.classList.add('show'); }
+}
+function closeMobileSidebar(){
+  document.querySelector('.sb')?.classList.remove('mob-open');
+  document.getElementById('sbOverlay')?.classList.remove('show');
+}
+
+// Swipe to open sidebar on mobile
+(function(){
+  let startX=0, startY=0;
+  document.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;startY=e.touches[0].clientY;},{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(!IS_MOBILE()) return;
+    const dx=e.changedTouches[0].clientX-startX;
+    const dy=Math.abs(e.changedTouches[0].clientY-startY);
+    if(startX<30&&dx>60&&dy<60) toggleMobileSidebar(); // swipe right from left edge = open
+    const sb=document.querySelector('.sb');
+    if(sb?.classList.contains('mob-open')&&dx<-60&&dy<60) closeMobileSidebar(); // swipe left = close
+  },{passive:true});
+})();
+
+function buildMobileNav(){
+  const tabs = document.getElementById('mobTabs');
+  if(!tabs) return;
+  if(curUser.role==='admin'){
+    tabs.innerHTML = [
+      {p:'dash',icon:'dashboard',label:'Home'},
+      {p:'orders',icon:'orders',label:'Orders',badge:'pendBadge2'},
+      {p:'map',icon:'map',label:'Live Map'},
+      {p:'customers',icon:'customers',label:'Clients'},
+      {p:'settings',icon:'settings',label:'More'},
+    ].map(t=>`<div class="mob-tab${currentPage===t.p?' act':''}" onclick="go('${t.p}');closeMobileSidebar()">
+      <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center">${ICONS[t.icon]||ICONS.settings}</span>
+      <span>${t.label}</span>
+      ${t.badge?`<span class="mob-tab-badge" id="${t.badge}" style="display:none">0</span>`:''}
+    </div>`).join('');
+  } else if(curUser.role==='dispatch'){
+    tabs.innerHTML = [
+      {p:'dash',icon:'dashboard',label:'Home'},
+      {p:'dispatch',icon:'dispatch',label:'Dispatch',badge:'dispBadge2'},
+      {p:'transport',icon:'transport',label:'Transport'},
+      {p:'notifs',icon:'notifications',label:'Alerts',badge:'notifBadge2'},
+    ].map(t=>`<div class="mob-tab${currentPage===t.p?' act':''}" onclick="go('${t.p}');closeMobileSidebar()">
+      <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center">${ICONS[t.icon]||ICONS.settings}</span>
+      <span>${t.label}</span>
+      ${t.badge?`<span class="mob-tab-badge" id="${t.badge}" style="display:none">0</span>`:''}
+    </div>`).join('');
+  } else {
+    tabs.innerHTML = [
+      {p:'dash',icon:'dashboard',label:'Home'},
+      {p:'myorders',icon:'orders',label:'Orders',badge:'pendBadge2'},
+      {p:'checkin',icon:'checkin',label:'Check-In'},
+      {p:'customers',icon:'customers',label:'Clients'},
+      {p:'mymap',icon:'mylocation',label:'Location'},
+    ].map(t=>`<div class="mob-tab${currentPage===t.p?' act':''}" onclick="go('${t.p}');closeMobileSidebar()">
+      <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center">${ICONS[t.icon]||ICONS.settings}</span>
+      <span>${t.label}</span>
+      ${t.badge?`<span class="mob-tab-badge" id="${t.badge}" style="display:none">0</span>`:''}
+    </div>`).join('');
+  }
+}
+
+function updateMobileHeader(name){
+  const mt = document.getElementById('mobTitle');
+  if(mt) mt.textContent = name;
+  // Sync active tab
+  document.querySelectorAll('.mob-tab').forEach(t=>{
+    t.classList.toggle('act', t.getAttribute('onclick')?.includes("'"+currentPage+"'"));
+  });
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
@@ -5331,7 +5585,7 @@ function renderDispatchStaffPage(pc,ta){
 
     <!-- Confirmed orders — needs packing -->
     ${confirmed.length?`
-    <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--blue)">📦 Orders To Be Packed (${confirmed.length})</div>
+    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--blue)">📦 Orders To Be Packed (${confirmed.length})</div>
     ${confirmed.map(o=>`
     <div class="dsp-card" style="border-left-color:var(--blue)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
@@ -5340,7 +5594,7 @@ function renderDispatchStaffPage(pc,ta){
           <div style="font-size:12px;color:var(--mut);margin-top:3px">📱 ${o.custMob} | ₹${o.total.toLocaleString('en-IN')} | ${o.items.length} items | ${o.pay}</div>
           <div style="font-size:12px;color:var(--mut)">🧑 SP: ${o.spName} | 📅 Order Date: ${o.date}</div>
         </div>
-        <span class="dsp-status dsp-packed">📦 Confirmed</span>
+        <span class="dsp-status dsp-packed">Confirmed</span>
       </div>
       <div class="oitems" style="margin-top:8px">${o.items.map(it=>`<div class="oitem"><span><b>${it.name}</b> (${it.code})</span><span>${it.qty} ${it.unit} | Size: ${it.size||'—'}</span></div>`).join('')}</div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
@@ -5351,10 +5605,10 @@ function renderDispatchStaffPage(pc,ta){
     <!-- Dispatched orders — status tracking -->
     ${dispatched.length?`
     <div class="divider"></div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--pur)">🚚 Dispatched Orders — Status Update (${dispatched.length})</div>
+    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;margin-bottom:11px;color:var(--pur)">🚚 Dispatched Orders — Status Update (${dispatched.length})</div>
     ${dispatched.map(o=>{
       const ds=o.deliveryStatus||'packed';
-      const statusMap={packed:{cls:'dsp-packed',lbl:'📦 Packed'},out_for_delivery:{cls:'dsp-otd',lbl:'🚚 Out for Delivery'},delivered:{cls:'dsp-delivered',lbl:'✅ Delivered'},failed:{cls:'dsp-failed',lbl:'❌ Failed'},dispatched:{cls:'dsp-delivered',lbl:'✅ Dispatched'}};
+      const statusMap={packed:{cls:'dsp-packed',lbl:'Packed'},out_for_delivery:{cls:'dsp-otd',lbl:'Out for Delivery'},delivered:{cls:'dsp-delivered',lbl:'Delivered'},failed:{cls:'dsp-failed',lbl:'❌ Failed'},dispatched:{cls:'dsp-delivered',lbl:'Dispatched'}};
       const st=statusMap[ds]||statusMap.packed;
       return`<div class="dsp-card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
@@ -5413,7 +5667,7 @@ function saveDeliveryUpdate(){
   if(newStatus==='out_for_delivery'||newStatus==='dispatched') o.status='dispatched';
   if(newStatus==='delivered') o.status='dispatched';
   sbSaveOrder(o); saveData();
-  const statusLabels={packed:'📦 Packed',out_for_delivery:'🚚 Out for Delivery',delivered:'✅ Delivered',failed:'❌ Failed'};
+  const statusLabels={packed:'Packed',out_for_delivery:'Out for Delivery',delivered:'Delivered',failed:'❌ Failed'};
   addNotif('dispatch',`${statusLabels[newStatus]||newStatus}: ${o.id}`,o.custName+' — '+o.custMob,o.id);
   toast('✅ Status updated: '+o.id);
   closeM('mDeliveryProof');
@@ -5425,12 +5679,12 @@ function saveDeliveryUpdate(){
 // ============================================================
 function getDeliveryStatusBadge(o){
   const ds=o.deliveryStatus||'';
-  if(!ds||ds==='dispatched')return'<span class="badge b-grn">✅ Dispatched</span>';
-  if(ds==='packed')return'<span class="dsp-status dsp-packed">📦 Packed</span>';
-  if(ds==='out_for_delivery')return'<span class="dsp-status dsp-otd">🚚 Out for Delivery</span>';
-  if(ds==='delivered')return'<span class="dsp-status dsp-delivered">✅ Delivered</span>';
+  if(!ds||ds==='dispatched')return'<span class="badge b-grn">Dispatched</span>';
+  if(ds==='packed')return'<span class="dsp-status dsp-packed">Packed</span>';
+  if(ds==='out_for_delivery')return'<span class="dsp-status dsp-otd">Out for Delivery</span>';
+  if(ds==='delivered')return'<span class="dsp-status dsp-delivered">Delivered</span>';
   if(ds==='failed')return'<span class="dsp-status dsp-failed">❌ Failed</span>';
-  return'<span class="badge b-grn">✅ Dispatched</span>';
+  return'<span class="badge b-grn">Dispatched</span>';
 }
 
 </script>
